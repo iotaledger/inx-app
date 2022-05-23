@@ -48,7 +48,7 @@ func (t *TangleListener) RegisterBlockSolidEvent(blockID iotago.BlockID) chan st
 	if err == nil {
 		if metadata.Solid {
 			// trigger the sync event, because the block is already solid
-			t.processSolidBlock(metadata)
+			t.blockSolidSyncEvent.Trigger(metadata.UnwrapBlockID())
 		}
 	}
 
