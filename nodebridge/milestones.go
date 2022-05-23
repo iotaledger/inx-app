@@ -18,6 +18,9 @@ type Milestone struct {
 }
 
 func milestoneFromINXMilestone(ms *inx.Milestone) (*Milestone, error) {
+	if ms == nil || ms.GetMilestone() == nil {
+		return nil, nil
+	}
 	milestone, err := ms.UnwrapMilestone(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		return nil, err
