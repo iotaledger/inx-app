@@ -37,7 +37,7 @@ type Events struct {
 }
 
 func INXMilestoneCaller(handler interface{}, params ...interface{}) {
-	handler.(func(metadata *inx.Milestone))(params[0].(*inx.Milestone))
+	handler.(func(metadata *Milestone))(params[0].(*Milestone))
 }
 
 func NewNodeBridge(ctx context.Context, address string, log *logger.Logger) (*NodeBridge, error) {

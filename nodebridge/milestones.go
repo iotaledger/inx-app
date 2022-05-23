@@ -12,38 +12,54 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
+type Milestone struct {
+	MilestoneID iotago.MilestoneID
+	Milestone   *iotago.Milestone
+}
+
+func milestoneFromINXMilestone(ms *inx.Milestone) (*Milestone, error) {
+	milestone, err := ms.UnwrapMilestone(serializer.DeSeriModeNoValidation, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &Milestone{
+		MilestoneID: ms.GetMilestoneInfo().GetMilestoneId().Unwrap(),
+		Milestone:   milestone,
+	}, nil
+}
+
 func (n *NodeBridge) IsNodeSynced() bool {
 	n.isSyncedMutex.RLock()
 	defer n.isSyncedMutex.RUnlock()
 
-	if n.confirmedMilestone == nil || n.latestMilestone == nil {
+	if n.latestMilestone == nil || n.confirmedMilestone == nil {
 		return false
 	}
 
 	return n.latestMilestone.GetMilestoneInfo().GetMilestoneIndex() == n.confirmedMilestone.GetMilestoneInfo().GetMilestoneIndex()
 }
 
-func (n *NodeBridge) LatestMilestone() (*iotago.Milestone, error) {
+func (n *NodeBridge) LatestMilestone() (*Milestone, error) {
 	n.isSyncedMutex.RLock()
 	defer n.isSyncedMutex.RUnlock()
-	return n.latestMilestone.UnwrapMilestone(serializer.DeSeriModeNoValidation, nil)
+	return milestoneFromINXMilestone(n.latestMilestone)
 }
 
-func (n *NodeBridge) ConfirmedMilestone() (*iotago.Milestone, error) {
+func (n *NodeBridge) ConfirmedMilestone() (*Milestone, error) {
 	n.isSyncedMutex.RLock()
 	defer n.isSyncedMutex.RUnlock()
-	return n.confirmedMilestone.UnwrapMilestone(serializer.DeSeriModeNoValidation, nil)
+	return milestoneFromINXMilestone(n.confirmedMilestone)
 }
 
-func (n *NodeBridge) Milestone(index uint32) (*iotago.Milestone, error) {
+func (n *NodeBridge) Milestone(index uint32) (*Milestone, error) {
 	req := &inx.MilestoneRequest{
 		MilestoneIndex: index,
 	}
-	m, err := n.client.ReadMilestone(context.Background(), req)
+	ms, err := n.client.ReadMilestone(context.Background(), req)
 	if err != nil {
 		return nil, err
 	}
-	return m.UnwrapMilestone(serializer.DeSeriModeNoValidation, nil)
+	return milestoneFromINXMilestone(ms)
 }
 
 func (n *NodeBridge) listenToLatestMilestones(ctx context.Context, cancel context.CancelFunc) error {
@@ -102,7 +118,10 @@ func (n *NodeBridge) processLatestMilestone(ms *inx.Milestone) {
 	n.isSyncedMutex.Unlock()
 
 	if changed {
-		n.Events.LatestMilestoneChanged.Trigger(ms)
+		milestone, err := milestoneFromINXMilestone(ms)
+		if err == nil {
+			n.Events.LatestMilestoneChanged.Trigger(milestone)
+		}
 	}
 }
 
@@ -116,6 +135,9 @@ func (n *NodeBridge) processConfirmedMilestone(ms *inx.Milestone) {
 	n.isSyncedMutex.Unlock()
 
 	if changed {
-		n.Events.ConfirmedMilestoneChanged.Trigger(ms)
+		milestone, err := milestoneFromINXMilestone(ms)
+		if err == nil {
+			n.Events.ConfirmedMilestoneChanged.Trigger(milestone)
+		}
 	}
 }
