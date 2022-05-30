@@ -5,8 +5,8 @@ import (
 
 	"go.uber.org/dig"
 
-	"github.com/gohornet/inx-app/nodebridge"
 	"github.com/iotaledger/hive.go/app"
+	"github.com/iotaledger/inx-app/nodebridge"
 )
 
 const PriorityDisconnectINX = 0
