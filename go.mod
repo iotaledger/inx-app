@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/iotaledger/hive.go v0.0.0-20220525131705-7bc68cc983dd
+	github.com/iotaledger/hive.go v0.0.0-20220530162014-976ec1e82594
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-20220525131705-7bc68cc983dd
 	github.com/iotaledger/inx/go v0.0.0-20220530150012-70615a11b1a2
 	github.com/iotaledger/iota.go/v3 v3.0.0-20220519135423-82921868d5cd
