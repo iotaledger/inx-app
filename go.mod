@@ -10,7 +10,7 @@ require (
 	github.com/iotaledger/inx/go v0.0.0-20220530150012-70615a11b1a2
 	github.com/iotaledger/iota.go/v3 v3.0.0-20220519135423-82921868d5cd
 	go.uber.org/dig v1.14.1
-	google.golang.org/grpc v1.46.2
+	google.golang.org/grpc v1.47.0
 )
 
 require (
