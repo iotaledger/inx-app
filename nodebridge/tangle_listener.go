@@ -60,7 +60,18 @@ func (t *TangleListener) DeregisterBlockSolidEvent(blockID iotago.BlockID) {
 }
 
 func (t *TangleListener) RegisterMilestoneConfirmedEvent(msIndex uint32) chan struct{} {
-	return t.milestoneConfirmedSyncEvent.RegisterEvent(msIndex)
+	milestoneConfirmedChan := t.milestoneConfirmedSyncEvent.RegisterEvent(msIndex)
+
+	// check if the milestone is already confirmed
+	ms, err := t.nodeBridge.ConfirmedMilestone()
+	if err != nil {
+		if ms != nil && ms.Milestone.Index >= msIndex {
+			// trigger the sync event, because the milestone is already confirmed
+			t.milestoneConfirmedSyncEvent.Trigger(msIndex)
+		}
+	}
+
+	return milestoneConfirmedChan
 }
 
 func (t *TangleListener) DeregisterMilestoneConfirmedEvent(msIndex uint32) {
