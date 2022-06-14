@@ -2,7 +2,10 @@ package nodebridge
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"io"
+	"sync"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -12,10 +15,16 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
+// ErrAlreadyRegistered is returned when a callback for the same block ID has already been registered.
+var ErrAlreadyRegistered = errors.New("callback for block ID is already registered")
+
 type TangleListener struct {
 	nodeBridge                  *NodeBridge
 	blockSolidSyncEvent         *events.SyncEvent
 	milestoneConfirmedSyncEvent *events.SyncEvent
+
+	callbacks map[iotago.BlockID]BlockSolidCallback
+	mu        sync.Mutex
 
 	Events *TangleListenerEvents
 }
@@ -23,6 +32,8 @@ type TangleListener struct {
 type TangleListenerEvents struct {
 	BlockSolid *events.Event
 }
+
+type BlockSolidCallback = func(*inx.BlockMetadata)
 
 func INXBlockMetadataCaller(handler interface{}, params ...interface{}) {
 	handler.(func(metadata *inx.BlockMetadata))(params[0].(*inx.BlockMetadata))
@@ -33,9 +44,60 @@ func NewTangleListener(nodeBridge *NodeBridge) *TangleListener {
 		nodeBridge:                  nodeBridge,
 		blockSolidSyncEvent:         events.NewSyncEvent(),
 		milestoneConfirmedSyncEvent: events.NewSyncEvent(),
+		callbacks:                   map[iotago.BlockID]BlockSolidCallback{},
 		Events: &TangleListenerEvents{
 			BlockSolid: events.NewEvent(INXBlockMetadataCaller),
 		},
+	}
+}
+
+// RegisterBlockSolidCallback registers a callback for when a block with blockID becomes solid.
+// If another callback for the same ID has already been registered, an error is returned.
+func (t *TangleListener) RegisterBlockSolidCallback(blockID iotago.BlockID, f BlockSolidCallback) error {
+	if err := t.registerBlockSolidCallback(blockID, f); err != nil {
+		return err
+	}
+
+	metadata, err := t.nodeBridge.BlockMetadata(blockID)
+	if err == nil && metadata.Solid {
+		t.triggerBlockSolidCallback(metadata)
+	}
+	return nil
+}
+
+func (t *TangleListener) registerBlockSolidCallback(blockID iotago.BlockID, f BlockSolidCallback) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if _, ok := t.callbacks[blockID]; ok {
+		return fmt.Errorf("%w: block %s", ErrAlreadyRegistered, blockID)
+	}
+	t.callbacks[blockID] = f
+	return nil
+}
+
+// DeregisterBlockSolidCallback removes a previously registered callback for blockID.
+func (t *TangleListener) DeregisterBlockSolidCallback(blockID iotago.BlockID) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	delete(t.callbacks, blockID)
+}
+
+// ClearBlockSolidCallbacks removes all previously registered callbacks.
+func (t *TangleListener) ClearBlockSolidCallbacks() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.callbacks = map[iotago.BlockID]BlockSolidCallback{}
+}
+
+func (t *TangleListener) triggerBlockSolidCallback(metadata *inx.BlockMetadata) {
+	id := metadata.GetBlockId().Unwrap()
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if f, ok := t.callbacks[id]; ok {
+		go f(metadata)
+		delete(t.callbacks, id)
 	}
 }
 
@@ -99,6 +161,7 @@ func (t *TangleListener) listenToSolidBlocks(ctx context.Context, cancel context
 		if ctx.Err() != nil {
 			break
 		}
+		t.triggerBlockSolidCallback(metadata)
 		t.blockSolidSyncEvent.Trigger(metadata.GetBlockId().Unwrap())
 		t.Events.BlockSolid.Trigger(metadata)
 	}
