@@ -63,10 +63,28 @@ func (n *NodeBridge) LatestMilestone() (*Milestone, error) {
 	return milestoneFromINXMilestone(n.latestMilestone)
 }
 
+func (n *NodeBridge) LatestMilestoneIndex() uint32 {
+	latestMilestone, err := n.LatestMilestone()
+	if err != nil || latestMilestone == nil {
+		return 0
+	}
+
+	return latestMilestone.Milestone.Index
+}
+
 func (n *NodeBridge) ConfirmedMilestone() (*Milestone, error) {
 	n.isSyncedMutex.RLock()
 	defer n.isSyncedMutex.RUnlock()
 	return milestoneFromINXMilestone(n.confirmedMilestone)
+}
+
+func (n *NodeBridge) ConfirmedMilestoneIndex() uint32 {
+	confirmedMilestone, err := n.LatestMilestone()
+	if err != nil || confirmedMilestone == nil {
+		return 0
+	}
+
+	return confirmedMilestone.Milestone.Index
 }
 
 func (n *NodeBridge) Milestone(index uint32) (*Milestone, error) {
