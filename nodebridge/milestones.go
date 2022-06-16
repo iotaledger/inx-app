@@ -12,6 +12,10 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
+const (
+	isNodeAlmostSyncedThreshold = 2
+)
+
 type Milestone struct {
 	MilestoneID iotago.MilestoneID
 	Milestone   *iotago.Milestone
@@ -40,6 +44,17 @@ func (n *NodeBridge) IsNodeSynced() bool {
 	}
 
 	return n.latestMilestone.GetMilestoneInfo().GetMilestoneIndex() == n.confirmedMilestone.GetMilestoneInfo().GetMilestoneIndex()
+}
+
+func (n *NodeBridge) IsNodeAlmostSynced() bool {
+	n.isSyncedMutex.RLock()
+	defer n.isSyncedMutex.RUnlock()
+
+	if n.latestMilestone == nil || n.confirmedMilestone == nil {
+		return false
+	}
+
+	return n.latestMilestone.GetMilestoneInfo().GetMilestoneIndex()-isNodeAlmostSyncedThreshold <= n.confirmedMilestone.GetMilestoneInfo().GetMilestoneIndex()
 }
 
 func (n *NodeBridge) LatestMilestone() (*Milestone, error) {
