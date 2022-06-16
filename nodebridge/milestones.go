@@ -144,3 +144,32 @@ func (n *NodeBridge) processConfirmedMilestone(ms *inx.Milestone) {
 		}
 	}
 }
+
+func (n *NodeBridge) MilestoneConeMetadata(ctx context.Context, cancel context.CancelFunc, index uint32, consumer func(metadata *inx.BlockMetadata)) error {
+	defer cancel()
+
+	req := &inx.MilestoneRequest{
+		MilestoneIndex: index,
+	}
+
+	stream, err := n.client.ReadMilestoneConeMetadata(context.Background(), req)
+	if err != nil {
+		return err
+	}
+	for {
+		metadata, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF || status.Code(err) == codes.Canceled {
+				break
+			}
+			n.LogErrorf("ReadMilestoneConeMetadata: %s", err.Error())
+			break
+		}
+		if ctx.Err() != nil {
+			break
+		}
+
+		consumer(metadata)
+	}
+	return nil
+}
