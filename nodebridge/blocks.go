@@ -2,6 +2,10 @@ package nodebridge
 
 import (
 	"context"
+	"io"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	inx "github.com/iotaledger/inx/go"
@@ -32,4 +36,28 @@ func (n *NodeBridge) Block(blockID iotago.BlockID) (*iotago.Block, error) {
 		return nil, err
 	}
 	return inxMsg.UnwrapBlock(serializer.DeSeriModeNoValidation, nil)
+}
+
+func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFunc, consumer func(block *iotago.Block)) error {
+	defer cancel()
+	stream, err := n.client.ListenToBlocks(ctx, &inx.NoParams{})
+	if err != nil {
+		return err
+	}
+	for {
+		block, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF || status.Code(err) == codes.Canceled {
+				break
+			}
+			n.LogErrorf("ListenToBlocks: %s", err.Error())
+			break
+		}
+		if ctx.Err() != nil {
+			break
+		}
+
+		consumer(block.MustUnwrapBlock(serializer.DeSeriModeNoValidation, nil))
+	}
+	return nil
 }

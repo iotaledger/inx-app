@@ -12,6 +12,10 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
+const (
+	isNodeAlmostSyncedThreshold = 2
+)
+
 type Milestone struct {
 	MilestoneID iotago.MilestoneID
 	Milestone   *iotago.Milestone
@@ -42,16 +46,45 @@ func (n *NodeBridge) IsNodeSynced() bool {
 	return n.latestMilestone.GetMilestoneInfo().GetMilestoneIndex() == n.confirmedMilestone.GetMilestoneInfo().GetMilestoneIndex()
 }
 
+func (n *NodeBridge) IsNodeAlmostSynced() bool {
+	n.isSyncedMutex.RLock()
+	defer n.isSyncedMutex.RUnlock()
+
+	if n.latestMilestone == nil || n.confirmedMilestone == nil {
+		return false
+	}
+
+	return n.latestMilestone.GetMilestoneInfo().GetMilestoneIndex()-isNodeAlmostSyncedThreshold <= n.confirmedMilestone.GetMilestoneInfo().GetMilestoneIndex()
+}
+
 func (n *NodeBridge) LatestMilestone() (*Milestone, error) {
 	n.isSyncedMutex.RLock()
 	defer n.isSyncedMutex.RUnlock()
 	return milestoneFromINXMilestone(n.latestMilestone)
 }
 
+func (n *NodeBridge) LatestMilestoneIndex() uint32 {
+	latestMilestone, err := n.LatestMilestone()
+	if err != nil || latestMilestone == nil {
+		return 0
+	}
+
+	return latestMilestone.Milestone.Index
+}
+
 func (n *NodeBridge) ConfirmedMilestone() (*Milestone, error) {
 	n.isSyncedMutex.RLock()
 	defer n.isSyncedMutex.RUnlock()
 	return milestoneFromINXMilestone(n.confirmedMilestone)
+}
+
+func (n *NodeBridge) ConfirmedMilestoneIndex() uint32 {
+	confirmedMilestone, err := n.ConfirmedMilestone()
+	if err != nil || confirmedMilestone == nil {
+		return 0
+	}
+
+	return confirmedMilestone.Milestone.Index
 }
 
 func (n *NodeBridge) Milestone(index uint32) (*Milestone, error) {
@@ -143,4 +176,33 @@ func (n *NodeBridge) processConfirmedMilestone(ms *inx.Milestone) {
 			n.Events.ConfirmedMilestoneChanged.Trigger(milestone)
 		}
 	}
+}
+
+func (n *NodeBridge) MilestoneConeMetadata(ctx context.Context, cancel context.CancelFunc, index uint32, consumer func(metadata *inx.BlockMetadata)) error {
+	defer cancel()
+
+	req := &inx.MilestoneRequest{
+		MilestoneIndex: index,
+	}
+
+	stream, err := n.client.ReadMilestoneConeMetadata(context.Background(), req)
+	if err != nil {
+		return err
+	}
+	for {
+		metadata, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF || status.Code(err) == codes.Canceled {
+				break
+			}
+			n.LogErrorf("ReadMilestoneConeMetadata: %s", err.Error())
+			break
+		}
+		if ctx.Err() != nil {
+			break
+		}
+
+		consumer(metadata)
+	}
+	return nil
 }
