@@ -23,8 +23,8 @@ type TangleListener struct {
 	blockSolidSyncEvent         *events.SyncEvent
 	milestoneConfirmedSyncEvent *events.SyncEvent
 
-	callbacks map[iotago.BlockID]BlockSolidCallback
-	mu        sync.Mutex
+	blockSolidCallbacks     map[iotago.BlockID]BlockSolidCallback
+	blockSolidCallbacksLock sync.Mutex
 
 	Events *TangleListenerEvents
 }
@@ -44,7 +44,7 @@ func NewTangleListener(nodeBridge *NodeBridge) *TangleListener {
 		nodeBridge:                  nodeBridge,
 		blockSolidSyncEvent:         events.NewSyncEvent(),
 		milestoneConfirmedSyncEvent: events.NewSyncEvent(),
-		callbacks:                   map[iotago.BlockID]BlockSolidCallback{},
+		blockSolidCallbacks:         map[iotago.BlockID]BlockSolidCallback{},
 		Events: &TangleListenerEvents{
 			BlockSolid: events.NewEvent(INXBlockMetadataCaller),
 		},
@@ -66,38 +66,38 @@ func (t *TangleListener) RegisterBlockSolidCallback(blockID iotago.BlockID, f Bl
 }
 
 func (t *TangleListener) registerBlockSolidCallback(blockID iotago.BlockID, f BlockSolidCallback) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	t.blockSolidCallbacksLock.Lock()
+	defer t.blockSolidCallbacksLock.Unlock()
 
-	if _, ok := t.callbacks[blockID]; ok {
-		return fmt.Errorf("%w: block %s", ErrAlreadyRegistered, blockID)
+	if _, ok := t.blockSolidCallbacks[blockID]; ok {
+		return fmt.Errorf("%w: block %s", ErrAlreadyRegistered, blockID.ToHex())
 	}
-	t.callbacks[blockID] = f
+	t.blockSolidCallbacks[blockID] = f
 	return nil
 }
 
 // DeregisterBlockSolidCallback removes a previously registered callback for blockID.
 func (t *TangleListener) DeregisterBlockSolidCallback(blockID iotago.BlockID) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	delete(t.callbacks, blockID)
+	t.blockSolidCallbacksLock.Lock()
+	defer t.blockSolidCallbacksLock.Unlock()
+	delete(t.blockSolidCallbacks, blockID)
 }
 
-// ClearBlockSolidCallbacks removes all previously registered callbacks.
+// ClearBlockSolidCallbacks removes all previously registered blockSolidCallbacks.
 func (t *TangleListener) ClearBlockSolidCallbacks() {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.callbacks = map[iotago.BlockID]BlockSolidCallback{}
+	t.blockSolidCallbacksLock.Lock()
+	defer t.blockSolidCallbacksLock.Unlock()
+	t.blockSolidCallbacks = map[iotago.BlockID]BlockSolidCallback{}
 }
 
 func (t *TangleListener) triggerBlockSolidCallback(metadata *inx.BlockMetadata) {
 	id := metadata.GetBlockId().Unwrap()
 
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if f, ok := t.callbacks[id]; ok {
+	t.blockSolidCallbacksLock.Lock()
+	defer t.blockSolidCallbacksLock.Unlock()
+	if f, ok := t.blockSolidCallbacks[id]; ok {
 		go f(metadata)
-		delete(t.callbacks, id)
+		delete(t.blockSolidCallbacks, id)
 	}
 }
 
