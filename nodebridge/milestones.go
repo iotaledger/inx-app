@@ -79,7 +79,7 @@ func (n *NodeBridge) ConfirmedMilestone() (*Milestone, error) {
 }
 
 func (n *NodeBridge) ConfirmedMilestoneIndex() uint32 {
-	confirmedMilestone, err := n.LatestMilestone()
+	confirmedMilestone, err := n.ConfirmedMilestone()
 	if err != nil || confirmedMilestone == nil {
 		return 0
 	}
