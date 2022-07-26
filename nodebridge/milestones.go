@@ -128,7 +128,7 @@ func (n *NodeBridge) listenToConfirmedMilestones(ctx context.Context, cancel con
 		return err
 	}
 	for {
-		milestone, err := stream.Recv()
+		milestoneAndParams, err := stream.Recv()
 		if err != nil {
 			if err == io.EOF || status.Code(err) == codes.Canceled {
 				break
@@ -139,7 +139,13 @@ func (n *NodeBridge) listenToConfirmedMilestones(ctx context.Context, cancel con
 		if ctx.Err() != nil {
 			break
 		}
-		n.processConfirmedMilestone(milestone)
+		protoParams, err := protocolParametersFromRaw(milestoneAndParams.GetCurrentProtocolParameters())
+		if err != nil {
+			n.LogErrorf("listenToConfirmedMilestones: %s", err.Error())
+			return err
+		}
+
+		n.processConfirmedMilestoneAndProtocolParameters(milestoneAndParams.GetMilestone(), protoParams)
 	}
 	return nil
 }
@@ -161,11 +167,12 @@ func (n *NodeBridge) processLatestMilestone(ms *inx.Milestone) {
 	}
 }
 
-func (n *NodeBridge) processConfirmedMilestone(ms *inx.Milestone) {
+func (n *NodeBridge) processConfirmedMilestoneAndProtocolParameters(ms *inx.Milestone, protoParams *iotago.ProtocolParameters) {
 	var changed bool
 	n.isSyncedMutex.Lock()
 	if ms.GetMilestoneInfo().GetMilestoneIndex() > n.confirmedMilestone.GetMilestoneInfo().GetMilestoneIndex() {
 		n.confirmedMilestone = ms
+		n.protocolParameters = protoParams
 		changed = true
 	}
 	n.isSyncedMutex.Unlock()
