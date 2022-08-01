@@ -63,7 +63,9 @@ func errorHandler() func(error, echo.Context) {
 	}
 }
 
-func NewEcho(logger *logger.Logger, onHTTPError func(err error, c echo.Context), debugRequestLoggerEnabled bool, additionalMiddlewares ...echo.MiddlewareFunc) *echo.Echo {
+// NewEcho returns a new Echo instance.
+// It hides the banner, adds a default HTTPErrorHandler and the Recover middleware.
+func NewEcho(logger *logger.Logger, onHTTPError func(err error, c echo.Context), debugRequestLoggerEnabled bool) *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
 
@@ -76,9 +78,6 @@ func NewEcho(logger *logger.Logger, onHTTPError func(err error, c echo.Context),
 	}
 
 	e.Use(middleware.Recover())
-	for _, additionalMiddleware := range additionalMiddlewares {
-		e.Use(additionalMiddleware)
-	}
 
 	if debugRequestLoggerEnabled {
 		e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
@@ -192,24 +191,4 @@ func ParseMilestoneIDParam(c echo.Context, paramName string) (*iotago.MilestoneI
 	var milestoneID iotago.MilestoneID
 	copy(milestoneID[:], milestoneIDBytes)
 	return &milestoneID, nil
-}
-
-func ParseOutputTypeQueryParam(c echo.Context, paramName string) (*iotago.OutputType, error) {
-	typeParam := strings.ToLower(c.QueryParam(paramName))
-	var filteredType *iotago.OutputType
-
-	if len(typeParam) > 0 {
-		outputTypeInt, err := strconv.ParseInt(typeParam, 10, 32)
-		if err != nil {
-			return nil, errors.WithMessagef(ErrInvalidParameter, "invalid type: %s, error: unknown output type", typeParam)
-		}
-		outputType := iotago.OutputType(outputTypeInt)
-		switch outputType {
-		case iotago.OutputBasic, iotago.OutputAlias, iotago.OutputNFT, iotago.OutputFoundry:
-		default:
-			return nil, errors.WithMessagef(ErrInvalidParameter, "invalid type: %s, error: unknown output type", typeParam)
-		}
-		filteredType = &outputType
-	}
-	return filteredType, nil
 }
