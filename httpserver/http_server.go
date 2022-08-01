@@ -125,6 +125,65 @@ func GetRequestContentType(c echo.Context, supportedContentTypes ...string) (str
 	return "", echo.ErrUnsupportedMediaType
 }
 
+func ParseBoolQueryParam(c echo.Context, paramName string) (bool, error) {
+	return strconv.ParseBool(c.QueryParam(paramName))
+}
+
+func ParseUint32QueryParam(c echo.Context, paramName string, maxValue ...uint32) (uint32, error) {
+	intString := strings.ToLower(c.QueryParam(paramName))
+	if intString == "" {
+		return 0, errors.WithMessagef(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+	}
+
+	value, err := strconv.ParseUint(intString, 10, 32)
+	if err != nil {
+		return 0, errors.WithMessagef(ErrInvalidParameter, "invalid value: %s, error: %s", intString, err)
+	}
+
+	if len(maxValue) > 0 {
+		if uint32(value) > maxValue[0] {
+			return 0, errors.WithMessagef(ErrInvalidParameter, "invalid value: %s, higher than the max number %d", intString, maxValue)
+		}
+	}
+	return uint32(value), nil
+}
+
+func ParseHexQueryParam(c echo.Context, paramName string, maxLen int) ([]byte, error) {
+	param := c.QueryParam(paramName)
+
+	paramBytes, err := iotago.DecodeHex(param)
+	if err != nil {
+		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid param: %s, error: %s", paramName, err)
+	}
+	if len(paramBytes) > maxLen {
+		return nil, errors.WithMessage(ErrInvalidParameter, fmt.Sprintf("query parameter %s too long, max. %d bytes but is %d", paramName, maxLen, len(paramBytes)))
+	}
+	return paramBytes, nil
+}
+
+func ParseUnixTimestampQueryParam(c echo.Context, paramName string) (time.Time, error) {
+	timestamp, err := ParseUint32QueryParam(c, paramName)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return time.Unix(int64(timestamp), 0), nil
+}
+
+func ParseBech32AddressQueryParam(c echo.Context, prefix iotago.NetworkPrefix, paramName string) (iotago.Address, error) {
+	addressParam := strings.ToLower(c.QueryParam(paramName))
+
+	hrp, bech32Address, err := iotago.ParseBech32(addressParam)
+	if err != nil {
+		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid address: %s, error: %s", addressParam, err)
+	}
+
+	if hrp != prefix {
+		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid bech32 address, expected prefix: %s", prefix)
+	}
+
+	return bech32Address, nil
+}
+
 func ParseBlockIDParam(c echo.Context, paramName string) (iotago.BlockID, error) {
 	blockIDHex := strings.ToLower(c.Param(paramName))
 
@@ -191,4 +250,55 @@ func ParseMilestoneIDParam(c echo.Context, paramName string) (*iotago.MilestoneI
 	var milestoneID iotago.MilestoneID
 	copy(milestoneID[:], milestoneIDBytes)
 	return &milestoneID, nil
+}
+
+func ParseAliasIDParam(c echo.Context, paramName string) (*iotago.AliasID, error) {
+	aliasIDParam := strings.ToLower(c.Param(paramName))
+
+	aliasIDBytes, err := iotago.DecodeHex(aliasIDParam)
+	if err != nil {
+		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid alias ID: %s, error: %s", aliasIDParam, err)
+	}
+
+	if len(aliasIDBytes) != iotago.AliasIDLength {
+		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid alias ID: %s, error: %s", aliasIDParam, err)
+	}
+
+	var aliasID iotago.AliasID
+	copy(aliasID[:], aliasIDBytes)
+	return &aliasID, nil
+}
+
+func ParseNFTIDParam(c echo.Context, paramName string) (*iotago.NFTID, error) {
+	nftIDParam := strings.ToLower(c.Param(paramName))
+
+	nftIDBytes, err := iotago.DecodeHex(nftIDParam)
+	if err != nil {
+		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid NFT ID: %s, error: %s", nftIDParam, err)
+	}
+
+	if len(nftIDBytes) != iotago.NFTIDLength {
+		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid NFT ID: %s, error: %s", nftIDParam, err)
+	}
+
+	var nftID iotago.NFTID
+	copy(nftID[:], nftIDBytes)
+	return &nftID, nil
+}
+
+func ParseFoundryIDParam(c echo.Context, paramName string) (*iotago.FoundryID, error) {
+	foundryIDParam := strings.ToLower(c.Param(paramName))
+
+	foundryIDBytes, err := iotago.DecodeHex(foundryIDParam)
+	if err != nil {
+		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid foundry ID: %s, error: %s", foundryIDParam, err)
+	}
+
+	if len(foundryIDBytes) != iotago.FoundryIDLength {
+		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid foundry ID: %s, error: %s", foundryIDParam, err)
+	}
+
+	var foundryID iotago.FoundryID
+	copy(foundryID[:], foundryIDBytes)
+	return &foundryID, nil
 }
