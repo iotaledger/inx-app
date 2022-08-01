@@ -1,15 +1,31 @@
 package httpserver
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/pkg/errors"
 
 	"github.com/iotaledger/hive.go/logger"
+	iotago "github.com/iotaledger/iota.go/v3"
+)
+
+const (
+	MIMEApplicationVendorIOTASerializerV1 = "application/vnd.iota.serializer-v1"
+)
+
+var (
+	// ErrInvalidParameter defines the invalid parameter error.
+	ErrInvalidParameter = echo.NewHTTPError(http.StatusBadRequest, "invalid parameter")
+
+	// ErrNotAcceptable defines the not acceptable error.
+	ErrNotAcceptable = echo.NewHTTPError(http.StatusNotAcceptable)
 )
 
 // JSONResponse sends the JSON response with status code.
@@ -47,14 +63,45 @@ func errorHandler() func(error, echo.Context) {
 	}
 }
 
-func NewEcho(logger *logger.Logger) *echo.Echo {
+func NewEcho(logger *logger.Logger, onHTTPError func(err error, c echo.Context), debugRequestLoggerEnabled bool, additionalMiddlewares ...echo.MiddlewareFunc) *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
+
 	apiErrorHandler := errorHandler()
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
-		logger.Debugf("Error: %s", err)
+		if onHTTPError != nil {
+			onHTTPError(err, c)
+		}
 		apiErrorHandler(err, c)
 	}
+
 	e.Use(middleware.Recover())
+	for _, additionalMiddleware := range additionalMiddlewares {
+		e.Use(additionalMiddleware)
+	}
+
+	if debugRequestLoggerEnabled {
+		e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+			LogLatency:      true,
+			LogRemoteIP:     true,
+			LogMethod:       true,
+			LogURI:          true,
+			LogUserAgent:    true,
+			LogStatus:       true,
+			LogError:        true,
+			LogResponseSize: true,
+			LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+				errString := ""
+				if v.Error != nil {
+					errString = fmt.Sprintf("error: \"%s\", ", v.Error.Error())
+				}
+
+				logger.Debugf("%d %s \"%s\", %sagent: \"%s\", remoteIP: %s, responseSize: %s, took: %v", v.Status, v.Method, v.URI, errString, v.UserAgent, v.RemoteIP, humanize.Bytes(uint64(v.ResponseSize)), v.Latency.Truncate(time.Millisecond))
+
+				return nil
+			},
+		}))
+	}
+
 	return e
 }
