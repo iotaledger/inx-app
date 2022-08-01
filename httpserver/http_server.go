@@ -105,3 +105,111 @@ func NewEcho(logger *logger.Logger, onHTTPError func(err error, c echo.Context),
 
 	return e
 }
+
+func GetAcceptHeaderContentType(c echo.Context, supportedContentTypes ...string) (string, error) {
+	ctype := c.Request().Header.Get(echo.HeaderAccept)
+	for _, supportedContentType := range supportedContentTypes {
+		if strings.HasPrefix(ctype, supportedContentType) {
+			return supportedContentType, nil
+		}
+	}
+	return "", ErrNotAcceptable
+}
+
+func GetRequestContentType(c echo.Context, supportedContentTypes ...string) (string, error) {
+	ctype := c.Request().Header.Get(echo.HeaderContentType)
+	for _, supportedContentType := range supportedContentTypes {
+		if strings.HasPrefix(ctype, supportedContentType) {
+			return supportedContentType, nil
+		}
+	}
+	return "", echo.ErrUnsupportedMediaType
+}
+
+func ParseBlockIDParam(c echo.Context, paramName string) (iotago.BlockID, error) {
+	blockIDHex := strings.ToLower(c.Param(paramName))
+
+	blockID, err := iotago.BlockIDFromHexString(blockIDHex)
+	if err != nil {
+		return iotago.EmptyBlockID(), errors.WithMessagef(ErrInvalidParameter, "invalid block ID: %s, error: %s", blockIDHex, err)
+	}
+	return blockID, nil
+}
+
+func ParseTransactionIDParam(c echo.Context, paramName string) (iotago.TransactionID, error) {
+	transactionID := iotago.TransactionID{}
+	transactionIDHex := strings.ToLower(c.Param(paramName))
+
+	transactionIDBytes, err := iotago.DecodeHex(transactionIDHex)
+	if err != nil {
+		return transactionID, errors.WithMessagef(ErrInvalidParameter, "invalid transaction ID: %s, error: %s", transactionIDHex, err)
+	}
+
+	if len(transactionIDBytes) != iotago.TransactionIDLength {
+		return transactionID, errors.WithMessagef(ErrInvalidParameter, "invalid transaction ID: %s, invalid length: %d", transactionIDHex, len(transactionIDBytes))
+	}
+
+	copy(transactionID[:], transactionIDBytes)
+	return transactionID, nil
+}
+
+func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, error) {
+	outputIDParam := strings.ToLower(c.Param(paramName))
+
+	outputID, err := iotago.OutputIDFromHex(outputIDParam)
+	if err != nil {
+		return iotago.OutputID{}, errors.WithMessagef(ErrInvalidParameter, "invalid output ID: %s, error: %s", outputIDParam, err)
+	}
+	return outputID, nil
+}
+
+func ParseMilestoneIndexParam(c echo.Context, paramName string) (iotago.MilestoneIndex, error) {
+	milestoneIndex := strings.ToLower(c.Param(paramName))
+	if milestoneIndex == "" {
+		return 0, errors.WithMessagef(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+	}
+
+	msIndex, err := strconv.ParseUint(milestoneIndex, 10, 32)
+	if err != nil {
+		return 0, errors.WithMessagef(ErrInvalidParameter, "invalid milestone index: %s, error: %s", milestoneIndex, err)
+	}
+
+	return iotago.MilestoneIndex(msIndex), nil
+}
+
+func ParseMilestoneIDParam(c echo.Context, paramName string) (*iotago.MilestoneID, error) {
+	milestoneIDHex := strings.ToLower(c.Param(paramName))
+
+	milestoneIDBytes, err := iotago.DecodeHex(milestoneIDHex)
+	if err != nil {
+		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid milestone ID: %s, error: %s", milestoneIDHex, err)
+	}
+
+	if len(milestoneIDBytes) != iotago.MilestoneIDLength {
+		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid milestone ID: %s, invalid length: %d", milestoneIDHex, len(milestoneIDBytes))
+	}
+
+	var milestoneID iotago.MilestoneID
+	copy(milestoneID[:], milestoneIDBytes)
+	return &milestoneID, nil
+}
+
+func ParseOutputTypeQueryParam(c echo.Context, paramName string) (*iotago.OutputType, error) {
+	typeParam := strings.ToLower(c.QueryParam(paramName))
+	var filteredType *iotago.OutputType
+
+	if len(typeParam) > 0 {
+		outputTypeInt, err := strconv.ParseInt(typeParam, 10, 32)
+		if err != nil {
+			return nil, errors.WithMessagef(ErrInvalidParameter, "invalid type: %s, error: unknown output type", typeParam)
+		}
+		outputType := iotago.OutputType(outputTypeInt)
+		switch outputType {
+		case iotago.OutputBasic, iotago.OutputAlias, iotago.OutputNFT, iotago.OutputFoundry:
+		default:
+			return nil, errors.WithMessagef(ErrInvalidParameter, "invalid type: %s, error: unknown output type", typeParam)
+		}
+		filteredType = &outputType
+	}
+	return filteredType, nil
+}
