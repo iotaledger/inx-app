@@ -2,15 +2,29 @@ package nodebridge
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	inx "github.com/iotaledger/inx/go"
+	iotago "github.com/iotaledger/iota.go/v3"
 )
 
-func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint32, endIndex uint32, consume func(update *inx.LedgerUpdate) error) error {
+var (
+	ErrLedgerUpdateTransactionAlreadyInProgress = errors.New("trying to begin a ledger update transaction with an already active transaction")
+	ErrLedgerUpdateInvalidOperation             = errors.New("trying to process a ledger update operation without active transaction")
+	ErrLedgerUpdateEndedAbruptly                = errors.New("ledger update transaction ended before receiving all operations")
+)
+
+type LedgerUpdate struct {
+	MilestoneIndex iotago.MilestoneIndex
+	Consumed       []*inx.LedgerSpent
+	Created        []*inx.LedgerOutput
+}
+
+func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint32, endIndex uint32, consume func(update *LedgerUpdate) error) error {
 	req := &inx.MilestoneRangeRequest{
 		StartMilestoneIndex: startIndex,
 		EndMilestoneIndex:   endIndex,
@@ -20,8 +34,10 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint3
 	if err != nil {
 		return err
 	}
+
+	var update *LedgerUpdate
 	for {
-		update, err := stream.Recv()
+		payload, err := stream.Recv()
 		if err == io.EOF || status.Code(err) == codes.Canceled {
 			break
 		}
@@ -32,8 +48,49 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint3
 		if err != nil {
 			return err
 		}
-		if err := consume(update); err != nil {
-			return err
+
+		switch op := payload.GetOp().(type) {
+		case *inx.LedgerUpdate_BatchMarker:
+			switch op.BatchMarker.GetMarkerType() {
+			case inx.LedgerUpdate_Marker_BEGIN:
+				n.LogDebugf("BEGIN batch: %d consumed: %d, created: %d", op.BatchMarker.GetMilestoneIndex(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
+				if update != nil {
+					return ErrLedgerUpdateTransactionAlreadyInProgress
+				}
+				update = &LedgerUpdate{
+					MilestoneIndex: op.BatchMarker.GetMilestoneIndex(),
+					Consumed:       make([]*inx.LedgerSpent, 0),
+					Created:        make([]*inx.LedgerOutput, 0),
+				}
+
+			case inx.LedgerUpdate_Marker_END:
+				n.LogDebugf("END batch: %d consumed: %d, created: %d", op.BatchMarker.GetMilestoneIndex(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
+				if update == nil {
+					return ErrLedgerUpdateInvalidOperation
+				}
+				if uint32(len(update.Consumed)) != op.BatchMarker.GetConsumedCount() ||
+					uint32(len(update.Created)) != op.BatchMarker.GetCreatedCount() ||
+					update.MilestoneIndex != op.BatchMarker.MilestoneIndex {
+					return ErrLedgerUpdateEndedAbruptly
+				}
+
+				if err := consume(update); err != nil {
+					return err
+				}
+				update = nil
+			}
+
+		case *inx.LedgerUpdate_Consumed:
+			if update == nil {
+				return ErrLedgerUpdateInvalidOperation
+			}
+			update.Consumed = append(update.Consumed, op.Consumed)
+
+		case *inx.LedgerUpdate_Created:
+			if update == nil {
+				return ErrLedgerUpdateInvalidOperation
+			}
+			update.Created = append(update.Created, op.Created)
 		}
 	}
 	return nil
