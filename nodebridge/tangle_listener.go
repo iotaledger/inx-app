@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/iotaledger/hive.go/events"
+	"github.com/iotaledger/hive.go/core/events"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
 )
@@ -149,7 +149,7 @@ func (t *TangleListener) Run(ctx context.Context) {
 		t.milestoneConfirmedSyncEvent.Trigger(ms.Milestone.Index)
 	})
 
-	t.nodeBridge.Events.ConfirmedMilestoneChanged.Attach(onMilestoneConfirmed)
+	t.nodeBridge.Events.ConfirmedMilestoneChanged.Hook(onMilestoneConfirmed)
 	<-c.Done()
 	t.nodeBridge.Events.ConfirmedMilestoneChanged.Detach(onMilestoneConfirmed)
 }
