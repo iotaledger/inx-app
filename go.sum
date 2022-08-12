@@ -294,8 +294,8 @@ github.com/imkira/go-interpol v1.1.0/go.mod h1:z0h2/2T3XF8kyEPpRgJ3kmNv+C43p+I/C
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/iotaledger/hive.go/core v1.0.0-beta.2 h1:+d+lhK8TvbTWkJsHTpnRxsXSiyDzTaFn2oLRc+AIG2Q=
 github.com/iotaledger/hive.go/core v1.0.0-beta.2/go.mod h1:bYl+7/qkM+rWiw8F6JF7dF5/9MW3y8F7j7DxDnTqWeE=
-github.com/iotaledger/hive.go/serializer/v2 v2.0.0-beta.1 h1:0NwAA/6N8/pUm7IQdd6rjmExfdwNZigYFhE31fOuQrU=
-github.com/iotaledger/hive.go/serializer/v2 v2.0.0-beta.1/go.mod h1:beZKjVT4HPayWfwsmItNNI5E81rS783vGx5ZwRbZQgY=
+github.com/iotaledger/hive.go/serializer/v2 v2.0.0-beta.2 h1:3eiiw4JazsOgDcyxT5dA4UhFRHO5NCAWyWwOl8aRa94=
+github.com/iotaledger/hive.go/serializer/v2 v2.0.0-beta.2/go.mod h1:beZKjVT4HPayWfwsmItNNI5E81rS783vGx5ZwRbZQgY=
 github.com/iotaledger/inx/go v1.0.0-beta.5 h1:DVnY6JJghXaLJmoThABhDku27XChApUw96V9a6hm5hc=
 github.com/iotaledger/inx/go v1.0.0-beta.5/go.mod h1:/3amwyiPVRnipGfNjAnf1eNC9inmkCJSKrncftn17bc=
 github.com/iotaledger/iota.go v1.0.0 h1:tqm1FxJ/zOdzbrAaQ5BQpVF8dUy2eeGlSeWlNG8GoXY=
