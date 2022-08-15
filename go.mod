@@ -6,8 +6,8 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/iotaledger/hive.go/core v1.0.0-beta.2
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-beta.1
+	github.com/iotaledger/hive.go/core v1.0.0-beta.3
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-beta.2
 	github.com/iotaledger/inx/go v1.0.0-beta.5
 	github.com/iotaledger/iota.go/v3 v3.0.0-beta.6
 	github.com/labstack/echo/v4 v4.8.0
@@ -38,6 +38,7 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
+	github.com/iancoleman/orderedmap v0.2.0 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
 	github.com/knadh/koanf v1.4.2 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
