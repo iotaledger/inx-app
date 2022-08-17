@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,6 +19,10 @@ import (
 
 const (
 	MIMEApplicationVendorIOTASerializerV1 = "application/vnd.iota.serializer-v1"
+	ProtocolHTTP                          = "http"
+	ProtocolHTTPS                         = "https"
+	ProtocolWS                            = "ws"
+	ProtocolWSS                           = "wss"
 )
 
 var (
@@ -301,4 +306,8 @@ func ParseFoundryIDParam(c echo.Context, paramName string) (*iotago.FoundryID, e
 	var foundryID iotago.FoundryID
 	copy(foundryID[:], foundryIDBytes)
 	return &foundryID, nil
+}
+
+func GetURL(protocol string, host string, port uint16, path ...string) string {
+	return fmt.Sprintf("%s://%s%s", protocol, net.JoinHostPort(host, strconv.Itoa(int(port))), strings.Join(path, "/"))
 }
