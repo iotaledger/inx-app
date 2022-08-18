@@ -2,6 +2,7 @@ package nodebridge
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"google.golang.org/grpc/codes"
@@ -23,12 +24,14 @@ type Milestone struct {
 
 func milestoneFromINXMilestone(ms *inx.Milestone) (*Milestone, error) {
 	if ms == nil || ms.GetMilestone() == nil {
+		//nolint:nilnil // nil, nil is ok in this context, even if it is not go idiomatic
 		return nil, nil
 	}
 	milestone, err := ms.UnwrapMilestone(serializer.DeSeriModeNoValidation, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	return &Milestone{
 		MilestoneID: ms.GetMilestoneInfo().GetMilestoneId().Unwrap(),
 		Milestone:   milestone,
@@ -60,6 +63,7 @@ func (n *NodeBridge) IsNodeAlmostSynced() bool {
 func (n *NodeBridge) LatestMilestone() (*Milestone, error) {
 	n.isSyncedMutex.RLock()
 	defer n.isSyncedMutex.RUnlock()
+
 	return milestoneFromINXMilestone(n.latestMilestone)
 }
 
@@ -75,6 +79,7 @@ func (n *NodeBridge) LatestMilestoneIndex() uint32 {
 func (n *NodeBridge) ConfirmedMilestone() (*Milestone, error) {
 	n.isSyncedMutex.RLock()
 	defer n.isSyncedMutex.RUnlock()
+
 	return milestoneFromINXMilestone(n.confirmedMilestone)
 }
 
@@ -95,22 +100,26 @@ func (n *NodeBridge) Milestone(index uint32) (*Milestone, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return milestoneFromINXMilestone(ms)
 }
 
 func (n *NodeBridge) listenToLatestMilestones(ctx context.Context, cancel context.CancelFunc) error {
 	defer cancel()
+
 	stream, err := n.client.ListenToLatestMilestones(ctx, &inx.NoParams{})
 	if err != nil {
 		return err
 	}
+
 	for {
 		milestone, err := stream.Recv()
 		if err != nil {
-			if err == io.EOF || status.Code(err) == codes.Canceled {
+			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 			n.LogErrorf("listenToLatestMilestones: %s", err.Error())
+
 			break
 		}
 		if ctx.Err() != nil {
@@ -118,22 +127,27 @@ func (n *NodeBridge) listenToLatestMilestones(ctx context.Context, cancel contex
 		}
 		n.processLatestMilestone(milestone)
 	}
+
+	//nolint:nilerr // false positive
 	return nil
 }
 
 func (n *NodeBridge) listenToConfirmedMilestones(ctx context.Context, cancel context.CancelFunc) error {
 	defer cancel()
+
 	stream, err := n.client.ListenToConfirmedMilestones(ctx, &inx.MilestoneRangeRequest{})
 	if err != nil {
 		return err
 	}
+
 	for {
 		milestoneAndParams, err := stream.Recv()
 		if err != nil {
-			if err == io.EOF || status.Code(err) == codes.Canceled {
+			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 			n.LogErrorf("listenToConfirmedMilestones: %s", err.Error())
+
 			break
 		}
 		if ctx.Err() != nil {
@@ -142,11 +156,14 @@ func (n *NodeBridge) listenToConfirmedMilestones(ctx context.Context, cancel con
 		protoParams, err := protocolParametersFromRaw(milestoneAndParams.GetCurrentProtocolParameters())
 		if err != nil {
 			n.LogErrorf("listenToConfirmedMilestones: %s", err.Error())
+
 			return err
 		}
 
 		n.processConfirmedMilestoneAndProtocolParameters(milestoneAndParams.GetMilestone(), protoParams)
 	}
+
+	//nolint:nilerr // false positive
 	return nil
 }
 
@@ -196,13 +213,15 @@ func (n *NodeBridge) MilestoneConeMetadata(ctx context.Context, cancel context.C
 	if err != nil {
 		return err
 	}
+
 	for {
 		metadata, err := stream.Recv()
 		if err != nil {
-			if err == io.EOF || status.Code(err) == codes.Canceled {
+			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 			n.LogErrorf("ReadMilestoneConeMetadata: %s", err.Error())
+
 			break
 		}
 		if ctx.Err() != nil {
@@ -211,5 +230,7 @@ func (n *NodeBridge) MilestoneConeMetadata(ctx context.Context, cancel context.C
 
 		consumer(metadata)
 	}
+
+	//nolint:nilerr // false positive
 	return nil
 }

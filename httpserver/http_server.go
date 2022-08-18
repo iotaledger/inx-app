@@ -117,6 +117,7 @@ func GetAcceptHeaderContentType(c echo.Context, supportedContentTypes ...string)
 			return supportedContentType, nil
 		}
 	}
+
 	return "", ErrNotAcceptable
 }
 
@@ -127,6 +128,7 @@ func GetRequestContentType(c echo.Context, supportedContentTypes ...string) (str
 			return supportedContentType, nil
 		}
 	}
+
 	return "", echo.ErrUnsupportedMediaType
 }
 
@@ -150,6 +152,7 @@ func ParseUint32QueryParam(c echo.Context, paramName string, maxValue ...uint32)
 			return 0, errors.WithMessagef(ErrInvalidParameter, "invalid value: %s, higher than the max number %d", intString, maxValue)
 		}
 	}
+
 	return uint32(value), nil
 }
 
@@ -163,6 +166,7 @@ func ParseHexQueryParam(c echo.Context, paramName string, maxLen int) ([]byte, e
 	if len(paramBytes) > maxLen {
 		return nil, errors.WithMessage(ErrInvalidParameter, fmt.Sprintf("query parameter %s too long, max. %d bytes but is %d", paramName, maxLen, len(paramBytes)))
 	}
+
 	return paramBytes, nil
 }
 
@@ -171,6 +175,7 @@ func ParseUnixTimestampQueryParam(c echo.Context, paramName string) (time.Time, 
 	if err != nil {
 		return time.Time{}, err
 	}
+
 	return time.Unix(int64(timestamp), 0), nil
 }
 
@@ -196,6 +201,7 @@ func ParseBlockIDParam(c echo.Context, paramName string) (iotago.BlockID, error)
 	if err != nil {
 		return iotago.EmptyBlockID(), errors.WithMessagef(ErrInvalidParameter, "invalid block ID: %s, error: %s", blockIDHex, err)
 	}
+
 	return blockID, nil
 }
 
@@ -213,6 +219,7 @@ func ParseTransactionIDParam(c echo.Context, paramName string) (iotago.Transacti
 	}
 
 	copy(transactionID[:], transactionIDBytes)
+
 	return transactionID, nil
 }
 
@@ -223,6 +230,7 @@ func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, erro
 	if err != nil {
 		return iotago.OutputID{}, errors.WithMessagef(ErrInvalidParameter, "invalid output ID: %s, error: %s", outputIDParam, err)
 	}
+
 	return outputID, nil
 }
 
@@ -254,6 +262,7 @@ func ParseMilestoneIDParam(c echo.Context, paramName string) (*iotago.MilestoneI
 
 	var milestoneID iotago.MilestoneID
 	copy(milestoneID[:], milestoneIDBytes)
+
 	return &milestoneID, nil
 }
 
@@ -271,6 +280,7 @@ func ParseAliasIDParam(c echo.Context, paramName string) (*iotago.AliasID, error
 
 	var aliasID iotago.AliasID
 	copy(aliasID[:], aliasIDBytes)
+
 	return &aliasID, nil
 }
 
@@ -288,6 +298,7 @@ func ParseNFTIDParam(c echo.Context, paramName string) (*iotago.NFTID, error) {
 
 	var nftID iotago.NFTID
 	copy(nftID[:], nftIDBytes)
+
 	return &nftID, nil
 }
 
@@ -305,6 +316,7 @@ func ParseFoundryIDParam(c echo.Context, paramName string) (*iotago.FoundryID, e
 
 	var foundryID iotago.FoundryID
 	copy(foundryID[:], foundryIDBytes)
+
 	return &foundryID, nil
 }
 

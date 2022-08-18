@@ -36,6 +36,7 @@ type TangleListenerEvents struct {
 type BlockSolidCallback = func(*inx.BlockMetadata)
 
 func INXBlockMetadataCaller(handler interface{}, params ...interface{}) {
+	//nolint:forcetypeassert // we will replace that with generic events anyway
 	handler.(func(metadata *inx.BlockMetadata))(params[0].(*inx.BlockMetadata))
 }
 
@@ -62,6 +63,7 @@ func (t *TangleListener) RegisterBlockSolidCallback(blockID iotago.BlockID, f Bl
 	if err == nil && metadata.Solid {
 		t.triggerBlockSolidCallback(metadata)
 	}
+
 	return nil
 }
 
@@ -73,6 +75,7 @@ func (t *TangleListener) registerBlockSolidCallback(blockID iotago.BlockID, f Bl
 		return fmt.Errorf("%w: block %s", ErrAlreadyRegistered, blockID.ToHex())
 	}
 	t.blockSolidCallbacks[blockID] = f
+
 	return nil
 }
 
@@ -143,7 +146,12 @@ func (t *TangleListener) DeregisterMilestoneConfirmedEvent(msIndex uint32) {
 func (t *TangleListener) Run(ctx context.Context) {
 	c, cancel := context.WithCancel(ctx)
 	defer cancel()
-	go t.listenToSolidBlocks(c, cancel)
+
+	go func() {
+		if err := t.listenToSolidBlocks(c, cancel); err != nil {
+			t.nodeBridge.LogErrorf("Error listening to solid blocks: %s", err)
+		}
+	}()
 
 	onMilestoneConfirmed := events.NewClosure(func(ms *Milestone) {
 		t.milestoneConfirmedSyncEvent.Trigger(ms.Milestone.Index)
@@ -156,17 +164,20 @@ func (t *TangleListener) Run(ctx context.Context) {
 
 func (t *TangleListener) listenToSolidBlocks(ctx context.Context, cancel context.CancelFunc) error {
 	defer cancel()
+
 	stream, err := t.nodeBridge.Client().ListenToSolidBlocks(ctx, &inx.NoParams{})
 	if err != nil {
 		return err
 	}
+
 	for {
 		metadata, err := stream.Recv()
 		if err != nil {
-			if err == io.EOF || status.Code(err) == codes.Canceled {
+			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 			t.nodeBridge.LogErrorf("listenToSolidBlocks: %s", err.Error())
+
 			break
 		}
 		if ctx.Err() != nil {
@@ -176,5 +187,7 @@ func (t *TangleListener) listenToSolidBlocks(ctx context.Context, cancel context
 		t.blockSolidSyncEvent.Trigger(metadata.GetBlockId().Unwrap())
 		t.Events.BlockSolid.Trigger(metadata)
 	}
+
+	//nolint:nilerr // false positive
 	return nil
 }

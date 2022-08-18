@@ -31,6 +31,7 @@ func DoPoW(ctx context.Context, block *iotago.Block, targetScore float64, parall
 
 	if targetScore == 0 {
 		block.Nonce = 0
+
 		return 0, nil
 	}
 
@@ -41,6 +42,7 @@ func DoPoW(ctx context.Context, block *iotago.Block, targetScore float64, parall
 	// enforce milestone block nonce == 0
 	if _, isMilestone := block.Payload.(*iotago.Milestone); isMilestone {
 		block.Nonce = 0
+
 		return 0, nil
 	}
 
@@ -86,6 +88,7 @@ func DoPoW(ctx context.Context, block *iotago.Block, targetScore float64, parall
 
 				return 0, pow.ErrCancelled
 			}
+
 			return 0, err
 		}
 
@@ -104,10 +107,12 @@ func DoPoW(ctx context.Context, block *iotago.Block, targetScore float64, parall
 				// redo the PoW with new tips
 				continue
 			}
+
 			return 0, err
 		}
 
 		block.Nonce = nonce
+
 		return len(powData) + nonceBytes, nil
 	}
 }
