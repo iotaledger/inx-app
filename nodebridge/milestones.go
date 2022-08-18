@@ -23,6 +23,7 @@ type Milestone struct {
 
 func milestoneFromINXMilestone(ms *inx.Milestone) (*Milestone, error) {
 	if ms == nil || ms.GetMilestone() == nil {
+		//nolint:nilnil // nil, nil is ok in this context, even if it is not go idiomatic
 		return nil, nil
 	}
 	milestone, err := ms.UnwrapMilestone(serializer.DeSeriModeNoValidation, nil)
