@@ -146,7 +146,11 @@ func (t *TangleListener) Run(ctx context.Context) {
 	c, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go t.listenToSolidBlocks(c, cancel)
+	go func() {
+		if err := t.listenToSolidBlocks(c, cancel); err != nil {
+			t.nodeBridge.LogErrorf("Error listening to solid blocks: %s", err)
+		}
+	}()
 
 	onMilestoneConfirmed := events.NewClosure(func(ms *Milestone) {
 		t.milestoneConfirmedSyncEvent.Trigger(ms.Milestone.Index)

@@ -31,7 +31,12 @@ func NewTipPoolListener(nodeBridge *NodeBridge, interval time.Duration) *TipPool
 func (t *TipPoolListener) Run(ctx context.Context) {
 	c, cancel := context.WithCancel(ctx)
 	defer cancel()
-	go t.listenToTipsMetrics(c, cancel)
+
+	go func() {
+		if err := t.listenToTipsMetrics(c, cancel); err != nil {
+			t.nodeBridge.LogErrorf("Error listening to tip metrics: %s", err)
+		}
+	}()
 
 	<-c.Done()
 }

@@ -102,8 +102,19 @@ func NewNodeBridge(ctx context.Context, address string, log *logger.Logger) (*No
 func (n *NodeBridge) Run(ctx context.Context) {
 	c, cancel := context.WithCancel(ctx)
 	defer cancel()
-	go n.listenToConfirmedMilestones(c, cancel)
-	go n.listenToLatestMilestones(c, cancel)
+
+	go func() {
+		if err := n.listenToConfirmedMilestones(c, cancel); err != nil {
+			n.LogErrorf("Error listening to confirmed milestones: %s", err)
+		}
+	}()
+
+	go func() {
+		if err := n.listenToLatestMilestones(c, cancel); err != nil {
+			n.LogErrorf("Error listening to latest milestones: %s", err)
+		}
+	}()
+
 	<-c.Done()
 	n.conn.Close()
 }
