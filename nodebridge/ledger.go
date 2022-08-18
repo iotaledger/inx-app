@@ -38,7 +38,7 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint3
 	var update *LedgerUpdate
 	for {
 		payload, err := stream.Recv()
-		if err == io.EOF || status.Code(err) == codes.Canceled {
+		if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 			break
 		}
 		if ctx.Err() != nil {

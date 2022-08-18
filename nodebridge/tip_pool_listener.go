@@ -2,6 +2,7 @@ package nodebridge
 
 import (
 	"context"
+	"errors"
 	"io"
 	"sync"
 	"time"
@@ -52,7 +53,7 @@ func (t *TipPoolListener) listenToTipsMetrics(ctx context.Context, cancel contex
 	for {
 		tipsMetric, err := stream.Recv()
 		if err != nil {
-			if err == io.EOF || status.Code(err) == codes.Canceled {
+			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 			t.nodeBridge.LogErrorf("ListenToTipsMetrics: %s", err.Error())

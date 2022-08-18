@@ -173,7 +173,7 @@ func (t *TangleListener) listenToSolidBlocks(ctx context.Context, cancel context
 	for {
 		metadata, err := stream.Recv()
 		if err != nil {
-			if err == io.EOF || status.Code(err) == codes.Canceled {
+			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 			t.nodeBridge.LogErrorf("listenToSolidBlocks: %s", err.Error())

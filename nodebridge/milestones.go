@@ -2,6 +2,7 @@ package nodebridge
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"google.golang.org/grpc/codes"
@@ -114,7 +115,7 @@ func (n *NodeBridge) listenToLatestMilestones(ctx context.Context, cancel contex
 	for {
 		milestone, err := stream.Recv()
 		if err != nil {
-			if err == io.EOF || status.Code(err) == codes.Canceled {
+			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 			n.LogErrorf("listenToLatestMilestones: %s", err.Error())
@@ -142,7 +143,7 @@ func (n *NodeBridge) listenToConfirmedMilestones(ctx context.Context, cancel con
 	for {
 		milestoneAndParams, err := stream.Recv()
 		if err != nil {
-			if err == io.EOF || status.Code(err) == codes.Canceled {
+			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 			n.LogErrorf("listenToConfirmedMilestones: %s", err.Error())
@@ -216,7 +217,7 @@ func (n *NodeBridge) MilestoneConeMetadata(ctx context.Context, cancel context.C
 	for {
 		metadata, err := stream.Recv()
 		if err != nil {
-			if err == io.EOF || status.Code(err) == codes.Canceled {
+			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 			n.LogErrorf("ReadMilestoneConeMetadata: %s", err.Error())

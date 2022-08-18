@@ -2,6 +2,7 @@ package nodebridge
 
 import (
 	"context"
+	"errors"
 	"io"
 
 	"google.golang.org/grpc/codes"
@@ -50,7 +51,7 @@ func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFu
 	for {
 		block, err := stream.Recv()
 		if err != nil {
-			if err == io.EOF || status.Code(err) == codes.Canceled {
+			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 			n.LogErrorf("ListenToBlocks: %s", err.Error())
