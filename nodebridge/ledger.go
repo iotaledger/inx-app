@@ -42,7 +42,8 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint3
 			break
 		}
 		if ctx.Err() != nil {
-			// context got cancelled, so stop the updates
+			// context got canceled, so stop the updates
+			//nolint:nilerr // false positive
 			return nil
 		}
 		if err != nil {

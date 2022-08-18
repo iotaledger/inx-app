@@ -104,10 +104,12 @@ func (n *NodeBridge) Milestone(index uint32) (*Milestone, error) {
 
 func (n *NodeBridge) listenToLatestMilestones(ctx context.Context, cancel context.CancelFunc) error {
 	defer cancel()
+
 	stream, err := n.client.ListenToLatestMilestones(ctx, &inx.NoParams{})
 	if err != nil {
 		return err
 	}
+
 	for {
 		milestone, err := stream.Recv()
 		if err != nil {
@@ -124,15 +126,18 @@ func (n *NodeBridge) listenToLatestMilestones(ctx context.Context, cancel contex
 		n.processLatestMilestone(milestone)
 	}
 
+	//nolint:nilerr // false positive
 	return nil
 }
 
 func (n *NodeBridge) listenToConfirmedMilestones(ctx context.Context, cancel context.CancelFunc) error {
 	defer cancel()
+
 	stream, err := n.client.ListenToConfirmedMilestones(ctx, &inx.MilestoneRangeRequest{})
 	if err != nil {
 		return err
 	}
+
 	for {
 		milestoneAndParams, err := stream.Recv()
 		if err != nil {
@@ -156,6 +161,7 @@ func (n *NodeBridge) listenToConfirmedMilestones(ctx context.Context, cancel con
 		n.processConfirmedMilestoneAndProtocolParameters(milestoneAndParams.GetMilestone(), protoParams)
 	}
 
+	//nolint:nilerr // false positive
 	return nil
 }
 
@@ -205,6 +211,7 @@ func (n *NodeBridge) MilestoneConeMetadata(ctx context.Context, cancel context.C
 	if err != nil {
 		return err
 	}
+
 	for {
 		metadata, err := stream.Recv()
 		if err != nil {
@@ -222,5 +229,6 @@ func (n *NodeBridge) MilestoneConeMetadata(ctx context.Context, cancel context.C
 		consumer(metadata)
 	}
 
+	//nolint:nilerr // false positive
 	return nil
 }

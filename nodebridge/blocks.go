@@ -41,10 +41,12 @@ func (n *NodeBridge) Block(blockID iotago.BlockID) (*iotago.Block, error) {
 
 func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFunc, consumer func(block *iotago.Block)) error {
 	defer cancel()
+
 	stream, err := n.client.ListenToBlocks(ctx, &inx.NoParams{})
 	if err != nil {
 		return err
 	}
+
 	for {
 		block, err := stream.Recv()
 		if err != nil {
@@ -62,5 +64,6 @@ func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFu
 		consumer(block.MustUnwrapBlock(serializer.DeSeriModeNoValidation, nil))
 	}
 
+	//nolint:nilerr // false positive
 	return nil
 }

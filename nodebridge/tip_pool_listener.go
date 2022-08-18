@@ -38,10 +38,12 @@ func (t *TipPoolListener) Run(ctx context.Context) {
 
 func (t *TipPoolListener) listenToTipsMetrics(ctx context.Context, cancel context.CancelFunc) error {
 	defer cancel()
+
 	stream, err := t.nodeBridge.Client().ListenToTipsMetrics(context.Background(), &inx.TipsMetricRequest{IntervalInMilliseconds: uint32(t.interval.Milliseconds())})
 	if err != nil {
 		return err
 	}
+
 	for {
 		tipsMetric, err := stream.Recv()
 		if err != nil {
@@ -58,6 +60,7 @@ func (t *TipPoolListener) listenToTipsMetrics(ctx context.Context, cancel contex
 		t.processTipsMetric(tipsMetric)
 	}
 
+	//nolint:nilerr // false positive
 	return nil
 }
 

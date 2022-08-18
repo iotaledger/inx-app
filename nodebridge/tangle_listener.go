@@ -145,6 +145,7 @@ func (t *TangleListener) DeregisterMilestoneConfirmedEvent(msIndex uint32) {
 func (t *TangleListener) Run(ctx context.Context) {
 	c, cancel := context.WithCancel(ctx)
 	defer cancel()
+
 	go t.listenToSolidBlocks(c, cancel)
 
 	onMilestoneConfirmed := events.NewClosure(func(ms *Milestone) {
@@ -158,10 +159,12 @@ func (t *TangleListener) Run(ctx context.Context) {
 
 func (t *TangleListener) listenToSolidBlocks(ctx context.Context, cancel context.CancelFunc) error {
 	defer cancel()
+
 	stream, err := t.nodeBridge.Client().ListenToSolidBlocks(ctx, &inx.NoParams{})
 	if err != nil {
 		return err
 	}
+
 	for {
 		metadata, err := stream.Recv()
 		if err != nil {
@@ -180,5 +183,6 @@ func (t *TangleListener) listenToSolidBlocks(ctx context.Context, cancel context
 		t.Events.BlockSolid.Trigger(metadata)
 	}
 
+	//nolint:nilerr // false positive
 	return nil
 }
