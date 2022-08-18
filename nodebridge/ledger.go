@@ -51,8 +51,11 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint3
 		}
 
 		switch op := payload.GetOp().(type) {
+		//nolint:nosnakecase // grpc uses underscores
 		case *inx.LedgerUpdate_BatchMarker:
 			switch op.BatchMarker.GetMarkerType() {
+
+			//nolint:nosnakecase // grpc uses underscores
 			case inx.LedgerUpdate_Marker_BEGIN:
 				n.LogDebugf("BEGIN batch: %d consumed: %d, created: %d", op.BatchMarker.GetMilestoneIndex(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
 				if update != nil {
@@ -64,6 +67,7 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint3
 					Created:        make([]*inx.LedgerOutput, 0),
 				}
 
+			//nolint:nosnakecase // grpc uses underscores
 			case inx.LedgerUpdate_Marker_END:
 				n.LogDebugf("END batch: %d consumed: %d, created: %d", op.BatchMarker.GetMilestoneIndex(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
 				if update == nil {
@@ -81,12 +85,14 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint3
 				update = nil
 			}
 
+		//nolint:nosnakecase // grpc uses underscores
 		case *inx.LedgerUpdate_Consumed:
 			if update == nil {
 				return ErrLedgerUpdateInvalidOperation
 			}
 			update.Consumed = append(update.Consumed, op.Consumed)
 
+		//nolint:nosnakecase // grpc uses underscores
 		case *inx.LedgerUpdate_Created:
 			if update == nil {
 				return ErrLedgerUpdateInvalidOperation

@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	grpcretry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	grpcprometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -50,8 +50,8 @@ func INXMilestoneCaller(handler interface{}, params ...interface{}) {
 
 func NewNodeBridge(ctx context.Context, address string, log *logger.Logger) (*NodeBridge, error) {
 	conn, err := grpc.Dial(address,
-		grpc.WithChainUnaryInterceptor(grpc_retry.UnaryClientInterceptor(), grpc_prometheus.UnaryClientInterceptor),
-		grpc.WithStreamInterceptor(grpc_prometheus.StreamClientInterceptor),
+		grpc.WithChainUnaryInterceptor(grpcretry.UnaryClientInterceptor(), grpcprometheus.UnaryClientInterceptor),
+		grpc.WithStreamInterceptor(grpcprometheus.StreamClientInterceptor),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
@@ -63,7 +63,7 @@ func NewNodeBridge(ctx context.Context, address string, log *logger.Logger) (*No
 	}
 
 	log.Info("Connecting to node and reading node configuration...")
-	nodeConfig, err := client.ReadNodeConfiguration(ctx, &inx.NoParams{}, grpc_retry.WithMax(5), grpc_retry.WithBackoff(retryBackoff))
+	nodeConfig, err := client.ReadNodeConfiguration(ctx, &inx.NoParams{}, grpcretry.WithMax(5), grpcretry.WithBackoff(retryBackoff))
 	if err != nil {
 		return nil, err
 	}
