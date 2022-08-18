@@ -36,6 +36,7 @@ type TangleListenerEvents struct {
 type BlockSolidCallback = func(*inx.BlockMetadata)
 
 func INXBlockMetadataCaller(handler interface{}, params ...interface{}) {
+	//nolint:forcetypeassert // we will replace that with generic events anyway
 	handler.(func(metadata *inx.BlockMetadata))(params[0].(*inx.BlockMetadata))
 }
 

@@ -44,6 +44,7 @@ type Events struct {
 }
 
 func INXMilestoneCaller(handler interface{}, params ...interface{}) {
+	//nolint:forcetypeassert // we will replace that with generic events anyway
 	handler.(func(metadata *Milestone))(params[0].(*Milestone))
 }
 
