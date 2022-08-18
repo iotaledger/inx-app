@@ -35,6 +35,7 @@ func (n *NodeBridge) Block(blockID iotago.BlockID) (*iotago.Block, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return inxMsg.UnwrapBlock(serializer.DeSeriModeNoValidation, nil)
 }
 
@@ -51,6 +52,7 @@ func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFu
 				break
 			}
 			n.LogErrorf("ListenToBlocks: %s", err.Error())
+
 			break
 		}
 		if ctx.Err() != nil {
@@ -59,5 +61,6 @@ func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFu
 
 		consumer(block.MustUnwrapBlock(serializer.DeSeriModeNoValidation, nil))
 	}
+
 	return nil
 }

@@ -117,12 +117,14 @@ func protocolParametersFromRaw(params *inx.RawProtocolParameters) (*iotago.Proto
 	if _, err := protoParams.Deserialize(params.GetParams(), serializer.DeSeriModeNoValidation, nil); err != nil {
 		return nil, err
 	}
+
 	return protoParams, nil
 }
 
 func (n *NodeBridge) ProtocolParameters() *iotago.ProtocolParameters {
 	n.isSyncedMutex.RLock()
 	defer n.isSyncedMutex.RUnlock()
+
 	return n.protocolParameters
 }
 
@@ -135,5 +137,6 @@ func (n *NodeBridge) NodeStatus() (*inx.NodeStatus, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return s, nil
 }

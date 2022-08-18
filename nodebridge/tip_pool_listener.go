@@ -49,6 +49,7 @@ func (t *TipPoolListener) listenToTipsMetrics(ctx context.Context, cancel contex
 				break
 			}
 			t.nodeBridge.LogErrorf("ListenToTipsMetrics: %s", err.Error())
+
 			break
 		}
 		if ctx.Err() != nil {
@@ -56,6 +57,7 @@ func (t *TipPoolListener) listenToTipsMetrics(ctx context.Context, cancel contex
 		}
 		t.processTipsMetric(tipsMetric)
 	}
+
 	return nil
 }
 

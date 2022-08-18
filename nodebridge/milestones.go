@@ -29,6 +29,7 @@ func milestoneFromINXMilestone(ms *inx.Milestone) (*Milestone, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &Milestone{
 		MilestoneID: ms.GetMilestoneInfo().GetMilestoneId().Unwrap(),
 		Milestone:   milestone,
@@ -60,6 +61,7 @@ func (n *NodeBridge) IsNodeAlmostSynced() bool {
 func (n *NodeBridge) LatestMilestone() (*Milestone, error) {
 	n.isSyncedMutex.RLock()
 	defer n.isSyncedMutex.RUnlock()
+
 	return milestoneFromINXMilestone(n.latestMilestone)
 }
 
@@ -75,6 +77,7 @@ func (n *NodeBridge) LatestMilestoneIndex() uint32 {
 func (n *NodeBridge) ConfirmedMilestone() (*Milestone, error) {
 	n.isSyncedMutex.RLock()
 	defer n.isSyncedMutex.RUnlock()
+
 	return milestoneFromINXMilestone(n.confirmedMilestone)
 }
 
@@ -95,6 +98,7 @@ func (n *NodeBridge) Milestone(index uint32) (*Milestone, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return milestoneFromINXMilestone(ms)
 }
 
@@ -111,6 +115,7 @@ func (n *NodeBridge) listenToLatestMilestones(ctx context.Context, cancel contex
 				break
 			}
 			n.LogErrorf("listenToLatestMilestones: %s", err.Error())
+
 			break
 		}
 		if ctx.Err() != nil {
@@ -118,6 +123,7 @@ func (n *NodeBridge) listenToLatestMilestones(ctx context.Context, cancel contex
 		}
 		n.processLatestMilestone(milestone)
 	}
+
 	return nil
 }
 
@@ -134,6 +140,7 @@ func (n *NodeBridge) listenToConfirmedMilestones(ctx context.Context, cancel con
 				break
 			}
 			n.LogErrorf("listenToConfirmedMilestones: %s", err.Error())
+
 			break
 		}
 		if ctx.Err() != nil {
@@ -142,11 +149,13 @@ func (n *NodeBridge) listenToConfirmedMilestones(ctx context.Context, cancel con
 		protoParams, err := protocolParametersFromRaw(milestoneAndParams.GetCurrentProtocolParameters())
 		if err != nil {
 			n.LogErrorf("listenToConfirmedMilestones: %s", err.Error())
+
 			return err
 		}
 
 		n.processConfirmedMilestoneAndProtocolParameters(milestoneAndParams.GetMilestone(), protoParams)
 	}
+
 	return nil
 }
 
@@ -203,6 +212,7 @@ func (n *NodeBridge) MilestoneConeMetadata(ctx context.Context, cancel context.C
 				break
 			}
 			n.LogErrorf("ReadMilestoneConeMetadata: %s", err.Error())
+
 			break
 		}
 		if ctx.Err() != nil {
@@ -211,5 +221,6 @@ func (n *NodeBridge) MilestoneConeMetadata(ctx context.Context, cancel context.C
 
 		consumer(metadata)
 	}
+
 	return nil
 }

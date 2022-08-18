@@ -93,5 +93,6 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint3
 			update.Created = append(update.Created, op.Created)
 		}
 	}
+
 	return nil
 }

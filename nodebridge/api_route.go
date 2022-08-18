@@ -34,6 +34,7 @@ func (n *NodeBridge) RegisterAPIRoute(route string, bindAddress string) error {
 		return err
 	}
 	_, err = n.client.RegisterAPIRoute(context.Background(), apiReq)
+
 	return err
 }
 
@@ -42,5 +43,6 @@ func (n *NodeBridge) UnregisterAPIRoute(route string) error {
 		Route: route,
 	}
 	_, err := n.client.UnregisterAPIRoute(context.Background(), apiReq)
+
 	return err
 }

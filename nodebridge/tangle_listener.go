@@ -62,6 +62,7 @@ func (t *TangleListener) RegisterBlockSolidCallback(blockID iotago.BlockID, f Bl
 	if err == nil && metadata.Solid {
 		t.triggerBlockSolidCallback(metadata)
 	}
+
 	return nil
 }
 
@@ -73,6 +74,7 @@ func (t *TangleListener) registerBlockSolidCallback(blockID iotago.BlockID, f Bl
 		return fmt.Errorf("%w: block %s", ErrAlreadyRegistered, blockID.ToHex())
 	}
 	t.blockSolidCallbacks[blockID] = f
+
 	return nil
 }
 
@@ -167,6 +169,7 @@ func (t *TangleListener) listenToSolidBlocks(ctx context.Context, cancel context
 				break
 			}
 			t.nodeBridge.LogErrorf("listenToSolidBlocks: %s", err.Error())
+
 			break
 		}
 		if ctx.Err() != nil {
@@ -176,5 +179,6 @@ func (t *TangleListener) listenToSolidBlocks(ctx context.Context, cancel context
 		t.blockSolidSyncEvent.Trigger(metadata.GetBlockId().Unwrap())
 		t.Events.BlockSolid.Trigger(metadata)
 	}
+
 	return nil
 }
