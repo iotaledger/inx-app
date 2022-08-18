@@ -17,7 +17,7 @@ func (n *NodeBridge) INXNodeClient() *nodeclient.Client {
 func (n *NodeBridge) RegisterAPIRoute(route string, bindAddress string) error {
 	bindAddressParts := strings.Split(bindAddress, ":")
 	if len(bindAddressParts) != 2 {
-		return fmt.Errorf("Invalid address %s", bindAddress)
+		return fmt.Errorf("invalid address %s", bindAddress)
 	}
 	port, err := strconv.ParseInt(bindAddressParts[1], 10, 32)
 	if err != nil {
