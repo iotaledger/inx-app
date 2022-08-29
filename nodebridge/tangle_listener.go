@@ -54,12 +54,12 @@ func NewTangleListener(nodeBridge *NodeBridge) *TangleListener {
 
 // RegisterBlockSolidCallback registers a callback for when a block with blockID becomes solid.
 // If another callback for the same ID has already been registered, an error is returned.
-func (t *TangleListener) RegisterBlockSolidCallback(blockID iotago.BlockID, f BlockSolidCallback) error {
+func (t *TangleListener) RegisterBlockSolidCallback(ctx context.Context, blockID iotago.BlockID, f BlockSolidCallback) error {
 	if err := t.registerBlockSolidCallback(blockID, f); err != nil {
 		return err
 	}
 
-	metadata, err := t.nodeBridge.BlockMetadata(blockID)
+	metadata, err := t.nodeBridge.BlockMetadata(ctx, blockID)
 	if err == nil && metadata.Solid {
 		t.triggerBlockSolidCallback(metadata)
 	}
@@ -104,12 +104,12 @@ func (t *TangleListener) triggerBlockSolidCallback(metadata *inx.BlockMetadata) 
 	}
 }
 
-func (t *TangleListener) RegisterBlockSolidEvent(blockID iotago.BlockID) chan struct{} {
+func (t *TangleListener) RegisterBlockSolidEvent(ctx context.Context, blockID iotago.BlockID) chan struct{} {
 
 	blockSolidChan := t.blockSolidSyncEvent.RegisterEvent(blockID)
 
 	// check if the block is already solid
-	metadata, err := t.nodeBridge.BlockMetadata(blockID)
+	metadata, err := t.nodeBridge.BlockMetadata(ctx, blockID)
 	if err == nil {
 		if metadata.Solid {
 			// trigger the sync event, because the block is already solid
