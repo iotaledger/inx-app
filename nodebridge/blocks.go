@@ -27,12 +27,12 @@ func (n *NodeBridge) SubmitBlock(ctx context.Context, block *iotago.Block) (iota
 	return response.Unwrap(), nil
 }
 
-func (n *NodeBridge) BlockMetadata(blockID iotago.BlockID) (*inx.BlockMetadata, error) {
-	return n.client.ReadBlockMetadata(context.Background(), inx.NewBlockId(blockID))
+func (n *NodeBridge) BlockMetadata(ctx context.Context, blockID iotago.BlockID) (*inx.BlockMetadata, error) {
+	return n.client.ReadBlockMetadata(ctx, inx.NewBlockId(blockID))
 }
 
-func (n *NodeBridge) Block(blockID iotago.BlockID) (*iotago.Block, error) {
-	inxMsg, err := n.client.ReadBlock(context.Background(), inx.NewBlockId(blockID))
+func (n *NodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago.Block, error) {
+	inxMsg, err := n.client.ReadBlock(ctx, inx.NewBlockId(blockID))
 	if err != nil {
 		return nil, err
 	}

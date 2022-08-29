@@ -144,8 +144,8 @@ func (n *NodeBridge) Client() inx.INXClient {
 	return n.client
 }
 
-func (n *NodeBridge) NodeStatus() (*inx.NodeStatus, error) {
-	s, err := n.client.ReadNodeStatus(context.Background(), &inx.NoParams{})
+func (n *NodeBridge) NodeStatus(ctx context.Context) (*inx.NodeStatus, error) {
+	s, err := n.client.ReadNodeStatus(ctx, &inx.NoParams{})
 	if err != nil {
 		return nil, err
 	}

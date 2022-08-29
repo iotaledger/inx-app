@@ -92,11 +92,11 @@ func (n *NodeBridge) ConfirmedMilestoneIndex() uint32 {
 	return confirmedMilestone.Milestone.Index
 }
 
-func (n *NodeBridge) Milestone(index uint32) (*Milestone, error) {
+func (n *NodeBridge) Milestone(ctx context.Context, index uint32) (*Milestone, error) {
 	req := &inx.MilestoneRequest{
 		MilestoneIndex: index,
 	}
-	ms, err := n.client.ReadMilestone(context.Background(), req)
+	ms, err := n.client.ReadMilestone(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func (n *NodeBridge) MilestoneConeMetadata(ctx context.Context, cancel context.C
 		MilestoneIndex: index,
 	}
 
-	stream, err := n.client.ReadMilestoneConeMetadata(context.Background(), req)
+	stream, err := n.client.ReadMilestoneConeMetadata(ctx, req)
 	if err != nil {
 		return err
 	}
