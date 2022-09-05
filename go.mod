@@ -10,7 +10,7 @@ require (
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-beta.3
 	github.com/iotaledger/inx/go v1.0.0-beta.6
 	github.com/iotaledger/iota.go/v3 v3.0.0-beta.8
-	github.com/labstack/echo/v4 v4.8.0
+	github.com/labstack/echo/v4 v4.9.0
 	github.com/pkg/errors v0.9.1
 	go.uber.org/dig v1.15.0
 	google.golang.org/grpc v1.49.0
