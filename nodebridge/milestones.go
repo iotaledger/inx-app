@@ -46,7 +46,9 @@ func (n *NodeBridge) IsNodeSynced() bool {
 		return false
 	}
 
-	return n.latestMilestone.GetMilestoneInfo().GetMilestoneIndex() == n.confirmedMilestone.GetMilestoneInfo().GetMilestoneIndex()
+	//nolint:godox // false positive
+	// TODO: send this info atomically, so that latest index can't be smaller than confirmed index
+	return n.latestMilestone.GetMilestoneInfo().GetMilestoneIndex() <= n.confirmedMilestone.GetMilestoneInfo().GetMilestoneIndex()
 }
 
 func (n *NodeBridge) IsNodeAlmostSynced() bool {
