@@ -2,7 +2,6 @@ package nodebridge
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 
 	"github.com/iotaledger/hive.go/core/events"
 	"github.com/iotaledger/hive.go/core/logger"
-	"github.com/iotaledger/hive.go/serializer/v2"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
 )
@@ -32,9 +30,8 @@ type NodeBridge struct {
 
 	Events *Events
 
-	isSyncedMutex      sync.RWMutex
-	latestMilestone    *inx.Milestone
-	confirmedMilestone *inx.Milestone
+	nodeStatusMutex    sync.RWMutex
+	nodeStatus         *inx.NodeStatus
 	protocolParameters *iotago.ProtocolParameters
 }
 
@@ -43,7 +40,7 @@ type Events struct {
 	ConfirmedMilestoneChanged *events.Event
 }
 
-func INXMilestoneCaller(handler interface{}, params ...interface{}) {
+func MilestoneCaller(handler interface{}, params ...interface{}) {
 	//nolint:forcetypeassert // we will replace that with generic events anyway
 	handler.(func(metadata *Milestone))(params[0].(*Milestone))
 }
@@ -74,13 +71,7 @@ func NewNodeBridge(ctx context.Context, address string, log *logger.Logger) (*No
 		return nil, err
 	}
 
-	log.Info("Reading protocol parameters...")
-	params, err := client.ReadProtocolParameters(ctx, &inx.MilestoneRequest{MilestoneIndex: nodeStatus.GetConfirmedMilestone().GetMilestoneInfo().GetMilestoneIndex()})
-	if err != nil {
-		return nil, err
-	}
-
-	protoParams, err := protocolParametersFromRaw(params)
+	protoParams, err := protocolParametersFromRaw(nodeStatus.GetCurrentProtocolParameters())
 	if err != nil {
 		return nil, err
 	}
@@ -91,11 +82,10 @@ func NewNodeBridge(ctx context.Context, address string, log *logger.Logger) (*No
 		client:        client,
 		NodeConfig:    nodeConfig,
 		Events: &Events{
-			LatestMilestoneChanged:    events.NewEvent(INXMilestoneCaller),
-			ConfirmedMilestoneChanged: events.NewEvent(INXMilestoneCaller),
+			LatestMilestoneChanged:    events.NewEvent(MilestoneCaller),
+			ConfirmedMilestoneChanged: events.NewEvent(MilestoneCaller),
 		},
-		latestMilestone:    nodeStatus.GetLatestMilestone(),
-		confirmedMilestone: nodeStatus.GetConfirmedMilestone(),
+		nodeStatus:         nodeStatus,
 		protocolParameters: protoParams,
 	}, nil
 }
@@ -105,14 +95,8 @@ func (n *NodeBridge) Run(ctx context.Context) {
 	defer cancel()
 
 	go func() {
-		if err := n.listenToConfirmedMilestones(c, cancel); err != nil {
-			n.LogErrorf("Error listening to confirmed milestones: %s", err)
-		}
-	}()
-
-	go func() {
-		if err := n.listenToLatestMilestones(c, cancel); err != nil {
-			n.LogErrorf("Error listening to latest milestones: %s", err)
+		if err := n.listenToNodeStatus(c, cancel); err != nil {
+			n.LogErrorf("Error listening to node status: %s", err)
 		}
 	}()
 
@@ -120,35 +104,6 @@ func (n *NodeBridge) Run(ctx context.Context) {
 	n.conn.Close()
 }
 
-func protocolParametersFromRaw(params *inx.RawProtocolParameters) (*iotago.ProtocolParameters, error) {
-	if params.ProtocolVersion != supportedProtocolVersion {
-		return nil, fmt.Errorf("unsupported protocol version %d vs %d", params.ProtocolVersion, supportedProtocolVersion)
-	}
-
-	protoParams := &iotago.ProtocolParameters{}
-	if _, err := protoParams.Deserialize(params.GetParams(), serializer.DeSeriModeNoValidation, nil); err != nil {
-		return nil, err
-	}
-
-	return protoParams, nil
-}
-
-func (n *NodeBridge) ProtocolParameters() *iotago.ProtocolParameters {
-	n.isSyncedMutex.RLock()
-	defer n.isSyncedMutex.RUnlock()
-
-	return n.protocolParameters
-}
-
 func (n *NodeBridge) Client() inx.INXClient {
 	return n.client
-}
-
-func (n *NodeBridge) NodeStatus(ctx context.Context) (*inx.NodeStatus, error) {
-	s, err := n.client.ReadNodeStatus(ctx, &inx.NoParams{})
-	if err != nil {
-		return nil, err
-	}
-
-	return s, nil
 }
