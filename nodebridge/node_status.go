@@ -14,6 +14,10 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 )
 
+const (
+	ListenToNodeStatusCooldownInMilliseconds = 1_000
+)
+
 func (n *NodeBridge) NodeStatus() *inx.NodeStatus {
 	n.nodeStatusMutex.RLock()
 	defer n.nodeStatusMutex.RUnlock()
@@ -56,7 +60,7 @@ func protocolParametersFromRaw(params *inx.RawProtocolParameters) (*iotago.Proto
 func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.CancelFunc) error {
 	defer cancel()
 
-	stream, err := n.client.ListenToNodeStatus(ctx, &inx.NodeStatusRequest{CooldownInMilliseconds: 1_000})
+	stream, err := n.client.ListenToNodeStatus(ctx, &inx.NodeStatusRequest{CooldownInMilliseconds: ListenToNodeStatusCooldownInMilliseconds})
 	if err != nil {
 		return err
 	}
