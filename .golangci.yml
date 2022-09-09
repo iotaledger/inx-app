@@ -14,6 +14,11 @@ linters-settings:
         check-shadowing: false
     misspell:
         locale: US
+    nlreturn:
+        # Size of the block (including return statement that is still "OK")
+        # so no return split required.
+        # Default: 1
+        block-size: 2
     staticcheck:
         checks: ["all"]
     stylecheck:
