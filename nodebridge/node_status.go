@@ -94,24 +94,31 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 	var latestMilestoneChanged bool
 	var confirmedMilestoneChanged bool
 
-	n.nodeStatusMutex.Lock()
-	if nodeStatus.GetLatestMilestone().GetMilestoneInfo().GetMilestoneIndex() > n.nodeStatus.GetLatestMilestone().GetMilestoneInfo().GetMilestoneIndex() {
-		latestMilestoneChanged = true
+	updateStatus := func() error {
+		n.nodeStatusMutex.Lock()
+		defer n.nodeStatusMutex.Unlock()
+
+		if nodeStatus.GetLatestMilestone().GetMilestoneInfo().GetMilestoneIndex() > n.nodeStatus.GetLatestMilestone().GetMilestoneInfo().GetMilestoneIndex() {
+			latestMilestoneChanged = true
+		}
+
+		if nodeStatus.GetConfirmedMilestone().GetMilestoneInfo().GetMilestoneIndex() > n.nodeStatus.GetConfirmedMilestone().GetMilestoneInfo().GetMilestoneIndex() {
+			confirmedMilestoneChanged = true
+		}
+		n.nodeStatus = nodeStatus
+
+		protocolParams, err := protocolParametersFromRaw(nodeStatus.GetCurrentProtocolParameters())
+		if err != nil {
+			return err
+		}
+		n.protocolParameters = protocolParams
+
+		return nil
 	}
 
-	if nodeStatus.GetConfirmedMilestone().GetMilestoneInfo().GetMilestoneIndex() > n.nodeStatus.GetConfirmedMilestone().GetMilestoneInfo().GetMilestoneIndex() {
-		confirmedMilestoneChanged = true
-	}
-	n.nodeStatus = nodeStatus
-
-	protocolParams, err := protocolParametersFromRaw(nodeStatus.GetCurrentProtocolParameters())
-	if err != nil {
-		n.nodeStatusMutex.Unlock()
+	if err := updateStatus(); err != nil {
 		return err
 	}
-	n.protocolParameters = protocolParams
-
-	n.nodeStatusMutex.Unlock()
 
 	if latestMilestoneChanged {
 		milestone, err := milestoneFromINXMilestone(nodeStatus.GetLatestMilestone())
