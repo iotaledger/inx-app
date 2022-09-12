@@ -308,8 +308,8 @@ github.com/iancoleman/orderedmap v0.2.0/go.mod h1:N0Wam8K1arqPXNWjMo21EXnBPOPp36
 github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6/go.mod h1:aSSvb/t6k1mPoxDqO4vJh6VOCGPwU4O0C2/Eqndh1Sc=
 github.com/imkira/go-interpol v1.1.0/go.mod h1:z0h2/2T3XF8kyEPpRgJ3kmNv+C43p+I/CoI+jC3w2iA=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
-github.com/iotaledger/hive.go/core v1.0.0-beta.5 h1:lKEw/gMYWMUIAUt/s2+zaF2eAcWb0dod/pGe66tkG34=
-github.com/iotaledger/hive.go/core v1.0.0-beta.5/go.mod h1:O0lzYAaP2vTv802PChD+Nop34dkosfmg9MYnHNO2fyY=
+github.com/iotaledger/hive.go/core v1.0.0-beta.6 h1:y9gP9q5eFib5RI8/kimtdrFVz2tDlRWJqthjtcsPOmo=
+github.com/iotaledger/hive.go/core v1.0.0-beta.6/go.mod h1:O0lzYAaP2vTv802PChD+Nop34dkosfmg9MYnHNO2fyY=
 github.com/iotaledger/hive.go/serializer/v2 v2.0.0-beta.3 h1:o7uLky3LQhNeMHZmNP7iaY67jdDUPRjKGL1GyvALQNM=
 github.com/iotaledger/hive.go/serializer/v2 v2.0.0-beta.3/go.mod h1:OMyV/ZEKiCzfqxXAmt1IBxl4Xmr6ipZFg6bjnzomtGc=
 github.com/iotaledger/inx/go v1.0.0-beta.8 h1:+2XJynipziKbjPjS3i2hTp93HE8OXwVKzWGE3jYkYEM=
