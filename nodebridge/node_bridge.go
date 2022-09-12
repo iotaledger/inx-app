@@ -2,6 +2,7 @@ package nodebridge
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/core/logger"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/iota.go/v3/nodeclient"
 )
 
 const (
@@ -106,4 +108,68 @@ func (n *NodeBridge) Run(ctx context.Context) {
 
 func (n *NodeBridge) Client() inx.INXClient {
 	return n.client
+}
+
+// Indexer returns the IndexerClient.
+// Returns ErrIndexerPluginNotAvailable if the current node does not support the plugin.
+// It retries every second until the given context is done.
+func (n *NodeBridge) Indexer(ctx context.Context) (nodeclient.IndexerClient, error) {
+
+	nodeClient := n.INXNodeClient()
+
+	getIndexerClient := func(ctx context.Context, nodeClient *nodeclient.Client) (nodeclient.IndexerClient, error) {
+		ctxTimeout, cancelTimeout := context.WithTimeout(ctx, 1*time.Second)
+		defer cancelTimeout()
+
+		return nodeClient.Indexer(ctxTimeout)
+	}
+
+	// wait until indexer plugin is available
+	for ctx.Err() == nil {
+		indexer, err := getIndexerClient(ctx, nodeClient)
+		if err != nil {
+			if !errors.Is(err, nodeclient.ErrIndexerPluginNotAvailable) {
+				return nil, err
+			}
+			time.Sleep(1 * time.Second)
+
+			continue
+		}
+
+		return indexer, nil
+	}
+
+	return nil, nodeclient.ErrIndexerPluginNotAvailable
+}
+
+// EventAPI returns the EventAPIClient if supported by the node.
+// Returns ErrMQTTPluginNotAvailable if the current node does not support the plugin.
+// It retries every second until the given context is done.
+func (n *NodeBridge) EventAPI(ctx context.Context) (*nodeclient.EventAPIClient, error) {
+
+	nodeClient := n.INXNodeClient()
+
+	getEventAPIClient := func(ctx context.Context, nodeClient *nodeclient.Client) (*nodeclient.EventAPIClient, error) {
+		ctxTimeout, cancelTimeout := context.WithTimeout(ctx, 1*time.Second)
+		defer cancelTimeout()
+
+		return nodeClient.EventAPI(ctxTimeout)
+	}
+
+	// wait until Event API plugin is available
+	for ctx.Err() == nil {
+		eventAPIClient, err := getEventAPIClient(ctx, nodeClient)
+		if err != nil {
+			if !errors.Is(err, nodeclient.ErrMQTTPluginNotAvailable) {
+				return nil, err
+			}
+			time.Sleep(1 * time.Second)
+
+			continue
+		}
+
+		return eventAPIClient, nil
+	}
+
+	return nil, nodeclient.ErrMQTTPluginNotAvailable
 }
