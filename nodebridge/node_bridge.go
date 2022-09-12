@@ -47,7 +47,7 @@ func MilestoneCaller(handler interface{}, params ...interface{}) {
 	handler.(func(metadata *Milestone))(params[0].(*Milestone))
 }
 
-func NewNodeBridge(ctx context.Context, address string, log *logger.Logger) (*NodeBridge, error) {
+func NewNodeBridge(ctx context.Context, address string, maxConnectionAttempts uint, log *logger.Logger) (*NodeBridge, error) {
 	conn, err := grpc.Dial(address,
 		grpc.WithChainUnaryInterceptor(grpcretry.UnaryClientInterceptor(), grpcprometheus.UnaryClientInterceptor),
 		grpc.WithStreamInterceptor(grpcprometheus.StreamClientInterceptor),
@@ -58,16 +58,17 @@ func NewNodeBridge(ctx context.Context, address string, log *logger.Logger) (*No
 	}
 	client := inx.NewINXClient(conn)
 	retryBackoff := func(_ uint) time.Duration {
+		log.Info("> retrying INX connection to node ...")
 		return 1 * time.Second
 	}
 
-	log.Info("Connecting to node and reading node configuration...")
-	nodeConfig, err := client.ReadNodeConfiguration(ctx, &inx.NoParams{}, grpcretry.WithMax(5), grpcretry.WithBackoff(retryBackoff))
+	log.Info("Connecting to node and reading node configuration ...")
+	nodeConfig, err := client.ReadNodeConfiguration(ctx, &inx.NoParams{}, grpcretry.WithMax(maxConnectionAttempts), grpcretry.WithBackoff(retryBackoff))
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info("Reading node status...")
+	log.Info("Reading node status ...")
 	nodeStatus, err := client.ReadNodeStatus(ctx, &inx.NoParams{})
 	if err != nil {
 		return nil, err

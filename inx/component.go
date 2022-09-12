@@ -40,13 +40,14 @@ func provide(c *dig.Container) error {
 	return c.Provide(func() (*nodebridge.NodeBridge, error) {
 		return nodebridge.NewNodeBridge(CoreComponent.Daemon().ContextStopped(),
 			ParamsINX.Address,
+			ParamsINX.MaxConnectionAttempts,
 			CoreComponent.Logger())
 	})
 }
 
 func run() error {
 	return CoreComponent.Daemon().BackgroundWorker("INX", func(ctx context.Context) {
-		CoreComponent.LogInfo("Starting NodeBridge")
+		CoreComponent.LogInfo("Starting NodeBridge ...")
 		deps.NodeBridge.Run(ctx)
 		CoreComponent.LogInfo("Stopped NodeBridge")
 
