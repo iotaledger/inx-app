@@ -3,6 +3,7 @@ package nodebridge
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/iotaledger/hive.go/core/events"
+	"github.com/iotaledger/hive.go/core/generics/options"
 	"github.com/iotaledger/hive.go/core/logger"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
@@ -25,6 +27,8 @@ const (
 type NodeBridge struct {
 	// the logger used to log events.
 	*logger.WrappedLogger
+
+	targetNetworkName string
 
 	conn       *grpc.ClientConn
 	client     inx.INXClient
@@ -47,7 +51,15 @@ func MilestoneCaller(handler interface{}, params ...interface{}) {
 	handler.(func(metadata *Milestone))(params[0].(*Milestone))
 }
 
-func NewNodeBridge(ctx context.Context, address string, maxConnectionAttempts uint, log *logger.Logger) (*NodeBridge, error) {
+// WithTargetNetworkName checks if the network name of the node is equal to the given targetNetworkName.
+// If targetNetworkName is empty, the check is disabled.
+func WithTargetNetworkName(targetNetworkName string) options.Option[NodeBridge] {
+	return func(n *NodeBridge) {
+		n.targetNetworkName = targetNetworkName
+	}
+}
+
+func NewNodeBridge(ctx context.Context, address string, maxConnectionAttempts uint, log *logger.Logger, opts ...options.Option[NodeBridge]) (*NodeBridge, error) {
 	conn, err := grpc.Dial(address,
 		grpc.WithChainUnaryInterceptor(grpcretry.UnaryClientInterceptor(), grpcprometheus.UnaryClientInterceptor),
 		grpc.WithStreamInterceptor(grpcprometheus.StreamClientInterceptor),
@@ -79,18 +91,28 @@ func NewNodeBridge(ctx context.Context, address string, maxConnectionAttempts ui
 		return nil, err
 	}
 
-	return &NodeBridge{
-		WrappedLogger: logger.NewWrappedLogger(log),
-		conn:          conn,
-		client:        client,
-		NodeConfig:    nodeConfig,
+	nb := options.Apply(&NodeBridge{
+		WrappedLogger:     logger.NewWrappedLogger(log),
+		targetNetworkName: "",
+		conn:              conn,
+		client:            client,
+		NodeConfig:        nodeConfig,
 		Events: &Events{
 			LatestMilestoneChanged:    events.NewEvent(MilestoneCaller),
 			ConfirmedMilestoneChanged: events.NewEvent(MilestoneCaller),
 		},
 		nodeStatus:         nodeStatus,
 		protocolParameters: protoParams,
-	}, nil
+	}, opts)
+
+	if nb.targetNetworkName != "" {
+		// we need to check for the correct target network name
+		if nb.targetNetworkName != protoParams.NetworkName {
+			return nil, fmt.Errorf("network name mismatch, networkName: \"%s\", targetNetworkName: \"%s\"", protoParams.NetworkName, nb.targetNetworkName)
+		}
+	}
+
+	return nb, nil
 }
 
 func (n *NodeBridge) Run(ctx context.Context) {
