@@ -41,7 +41,9 @@ func provide(c *dig.Container) error {
 		return nodebridge.NewNodeBridge(CoreComponent.Daemon().ContextStopped(),
 			ParamsINX.Address,
 			ParamsINX.MaxConnectionAttempts,
-			CoreComponent.Logger())
+			CoreComponent.Logger(),
+			nodebridge.WithTargetNetworkName(ParamsINX.TargetNetworkName),
+		)
 	})
 }
 
