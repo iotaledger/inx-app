@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/core/app"
 	"github.com/iotaledger/hive.go/core/app/pkg/shutdown"
-	"github.com/iotaledger/inx-app/nodebridge"
+	"github.com/iotaledger/inx-app/pkg/nodebridge"
 )
 
 const PriorityDisconnectINX = 0
