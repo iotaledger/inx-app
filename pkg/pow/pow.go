@@ -20,6 +20,8 @@ const (
 var (
 	// ErrOperationAborted is returned when the operation was aborted e.g. by a shutdown signal.
 	ErrOperationAborted = errors.New("operation was aborted")
+	// ErrParentsNotGiven is returned when no block parents and no refreshTipsFunc were given.
+	ErrParentsNotGiven = errors.New("no parents given")
 )
 
 // RefreshTipsFunc refreshes tips of the block if PoW takes longer than a configured duration.
@@ -29,14 +31,23 @@ type RefreshTipsFunc = func() (tips iotago.BlockIDs, err error)
 // The given iota.Block's nonce is automatically updated.
 func DoPoW(ctx context.Context, block *iotago.Block, targetScore float64, parallelism int, refreshTipsInterval time.Duration, refreshTipsFunc RefreshTipsFunc) (blockSize int, err error) {
 
+	if len(block.Parents) == 0 {
+		if refreshTipsFunc == nil {
+			return 0, ErrParentsNotGiven
+		}
+
+		// select initial parents
+		tips, err := refreshTipsFunc()
+		if err != nil {
+			return 0, err
+		}
+		block.Parents = tips
+	}
+
 	if targetScore == 0 {
 		block.Nonce = 0
 
 		return 0, nil
-	}
-
-	if err := contextutils.ReturnErrIfCtxDone(ctx, ErrOperationAborted); err != nil {
-		return 0, err
 	}
 
 	// enforce milestone block nonce == 0
@@ -44,6 +55,10 @@ func DoPoW(ctx context.Context, block *iotago.Block, targetScore float64, parall
 		block.Nonce = 0
 
 		return 0, nil
+	}
+
+	if err := contextutils.ReturnErrIfCtxDone(ctx, ErrOperationAborted); err != nil {
+		return 0, err
 	}
 
 	getPoWData := func(block *iotago.Block) (powData []byte, err error) {
