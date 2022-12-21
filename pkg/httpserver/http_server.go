@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -51,7 +52,6 @@ type HTTPErrorResponseEnvelope struct {
 
 func errorHandler() func(error, echo.Context) {
 	return func(err error, c echo.Context) {
-
 		var statusCode int
 		var message string
 
@@ -82,7 +82,12 @@ func NewEcho(logger *logger.Logger, onHTTPError func(err error, c echo.Context),
 		apiErrorHandler(err, c)
 	}
 
-	e.Use(middleware.Recover())
+	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
+		LogErrorFunc: func(c echo.Context, err error, stack []byte) error {
+			logger.Errorf("Internal Server Error: %s \nrequestURI: %s\n %s", err.Error(), c.Request().RequestURI, string(debug.Stack()))
+			return err
+		},
+	}))
 
 	if debugRequestLoggerEnabled {
 		e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
