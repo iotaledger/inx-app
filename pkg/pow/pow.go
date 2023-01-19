@@ -29,7 +29,7 @@ type RefreshTipsFunc = func() (tips iotago.BlockIDs, err error)
 
 // DoPoW does the proof-of-work required to hit the given target score.
 // The given iota.Block's nonce is automatically updated.
-func DoPoW(ctx context.Context, block *iotago.Block, targetScore float64, parallelism int, refreshTipsInterval time.Duration, refreshTipsFunc RefreshTipsFunc) (blockSize int, err error) {
+func DoPoW(ctx context.Context, block *iotago.Block, deSeriMode serializer.DeSerializationMode, protoParams *iotago.ProtocolParameters, parallelism int, refreshTipsInterval time.Duration, refreshTipsFunc RefreshTipsFunc) (blockSize int, err error) {
 
 	if len(block.Parents) == 0 {
 		if refreshTipsFunc == nil {
@@ -44,7 +44,7 @@ func DoPoW(ctx context.Context, block *iotago.Block, targetScore float64, parall
 		block.Parents = tips
 	}
 
-	if targetScore == 0 {
+	if protoParams.MinPoWScore == 0 {
 		block.Nonce = 0
 
 		return 0, nil
@@ -62,7 +62,7 @@ func DoPoW(ctx context.Context, block *iotago.Block, targetScore float64, parall
 	}
 
 	getPoWData := func(block *iotago.Block) (powData []byte, err error) {
-		blockData, err := block.Serialize(serializer.DeSeriModeNoValidation, nil)
+		blockData, err := block.Serialize(deSeriMode, protoParams)
 		if err != nil {
 			return nil, fmt.Errorf("unable to perform PoW as block can't be serialized: %w", err)
 		}
@@ -85,7 +85,7 @@ func DoPoW(ctx context.Context, block *iotago.Block, targetScore float64, parall
 			defer powTimeoutCancel()
 		}
 
-		nonce, err := pow.New(parallelism).Mine(powCtx, powData, targetScore)
+		nonce, err := pow.New(parallelism).Mine(powCtx, powData, float64(protoParams.MinPoWScore))
 		if err != nil {
 			if errors.Is(err, pow.ErrCancelled) && refreshTipsFunc != nil {
 				// context was canceled and tips can be refreshed
