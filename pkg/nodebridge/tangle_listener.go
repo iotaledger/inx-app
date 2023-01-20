@@ -61,6 +61,11 @@ func (t *TangleListener) RegisterBlockSolidCallback(ctx context.Context, blockID
 
 	metadata, err := t.nodeBridge.BlockMetadata(ctx, blockID)
 	if err != nil {
+		// if the block is not found, then it is also not yet solid
+		if status.Code(err) == codes.NotFound {
+			return nil
+		}
+
 		return err
 	}
 	if metadata.Solid {
@@ -116,6 +121,11 @@ func (t *TangleListener) RegisterBlockSolidEvent(ctx context.Context, blockID io
 	// check if the block is already solid
 	metadata, err := t.nodeBridge.BlockMetadata(ctx, blockID)
 	if err != nil {
+		// if the block is not found, then it is also not yet solid
+		if status.Code(err) == codes.NotFound {
+			return blockSolidChan, nil
+		}
+
 		return nil, err
 	}
 	if metadata.Solid {
