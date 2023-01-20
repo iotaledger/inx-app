@@ -60,7 +60,11 @@ func (t *TangleListener) RegisterBlockSolidCallback(ctx context.Context, blockID
 	}
 
 	metadata, err := t.nodeBridge.BlockMetadata(ctx, blockID)
-	if err == nil && metadata.Solid {
+	if err != nil {
+		return err
+	}
+	if metadata.Solid {
+		// trigger the callback, because the block is already solid
 		t.triggerBlockSolidCallback(metadata)
 	}
 
@@ -72,7 +76,7 @@ func (t *TangleListener) registerBlockSolidCallback(blockID iotago.BlockID, f Bl
 	defer t.blockSolidCallbacksLock.Unlock()
 
 	if _, ok := t.blockSolidCallbacks[blockID]; ok {
-		return fmt.Errorf("%w: block %s", ErrAlreadyRegistered, blockID.ToHex())
+		return fmt.Errorf("%w: block %s", ErrAlreadyRegistered, blockID)
 	}
 	t.blockSolidCallbacks[blockID] = f
 
@@ -104,41 +108,49 @@ func (t *TangleListener) triggerBlockSolidCallback(metadata *inx.BlockMetadata) 
 	}
 }
 
-func (t *TangleListener) RegisterBlockSolidEvent(ctx context.Context, blockID iotago.BlockID) chan struct{} {
-
+// RegisterBlockSolidEvent registers an event for when the block with blockID becomes solid.
+// If the block is already solid, the event is triggered imitatively.
+func (t *TangleListener) RegisterBlockSolidEvent(ctx context.Context, blockID iotago.BlockID) (chan struct{}, error) {
 	blockSolidChan := t.blockSolidSyncEvent.RegisterEvent(blockID)
 
 	// check if the block is already solid
 	metadata, err := t.nodeBridge.BlockMetadata(ctx, blockID)
-	if err == nil {
-		if metadata.Solid {
-			// trigger the sync event, because the block is already solid
-			t.blockSolidSyncEvent.Trigger(metadata.UnwrapBlockID())
-		}
+	if err != nil {
+		return nil, err
+	}
+	if metadata.Solid {
+		// trigger the sync event, because the block is already solid
+		t.blockSolidSyncEvent.Trigger(metadata.UnwrapBlockID())
 	}
 
-	return blockSolidChan
+	return blockSolidChan, nil
 }
 
+// DeregisterBlockSolidEvent removes a registered solid block event by triggering it to free memory.
 func (t *TangleListener) DeregisterBlockSolidEvent(blockID iotago.BlockID) {
 	t.blockSolidSyncEvent.DeregisterEvent(blockID)
 }
 
+// RegisterMilestoneConfirmedEvent registers an event for when the milestone with msIndex gets confirmed.
+// If the milestone is already confirmed, the event is triggered imitatively.
 func (t *TangleListener) RegisterMilestoneConfirmedEvent(msIndex uint32) chan struct{} {
 	milestoneConfirmedChan := t.milestoneConfirmedSyncEvent.RegisterEvent(msIndex)
 
 	// check if the milestone is already confirmed
 	ms, err := t.nodeBridge.ConfirmedMilestone()
 	if err != nil {
-		if ms != nil && ms.Milestone.Index >= msIndex {
-			// trigger the sync event, because the milestone is already confirmed
-			t.milestoneConfirmedSyncEvent.Trigger(msIndex)
-		}
+		// this should never fail
+		panic(err)
+	}
+	if ms != nil && ms.Milestone.Index >= msIndex {
+		// trigger the sync event, because the milestone is already confirmed
+		t.milestoneConfirmedSyncEvent.Trigger(msIndex)
 	}
 
 	return milestoneConfirmedChan
 }
 
+// DeregisterMilestoneConfirmedEvent removes a registered confirmed milestone event by triggering it to free memory.
 func (t *TangleListener) DeregisterMilestoneConfirmedEvent(msIndex uint32) {
 	t.milestoneConfirmedSyncEvent.DeregisterEvent(msIndex)
 }
@@ -170,24 +182,21 @@ func (t *TangleListener) listenToSolidBlocks(ctx context.Context, cancel context
 		return err
 	}
 
-	for {
+	// receive until the context is canceled
+	for ctx.Err() == nil {
 		metadata, err := stream.Recv()
 		if err != nil {
 			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
-			t.nodeBridge.LogErrorf("listenToSolidBlocks: %s", err.Error())
 
-			break
+			return err
 		}
-		if ctx.Err() != nil {
-			break
-		}
+
 		t.triggerBlockSolidCallback(metadata)
 		t.blockSolidSyncEvent.Trigger(metadata.GetBlockId().Unwrap())
 		t.Events.BlockSolid.Trigger(metadata)
 	}
 
-	//nolint:nilerr // false positive
 	return nil
 }
