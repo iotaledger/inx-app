@@ -29,13 +29,11 @@ type NodeBridge struct {
 	*logger.WrappedLogger
 
 	targetNetworkName string
+	Events            *Events
 
-	conn       *grpc.ClientConn
-	client     inx.INXClient
-	NodeConfig *inx.NodeConfiguration
-
-	Events *Events
-
+	conn               *grpc.ClientConn
+	client             inx.INXClient
+	NodeConfig         *inx.NodeConfiguration
 	nodeStatusMutex    sync.RWMutex
 	nodeStatus         *inx.NodeStatus
 	protocolParameters *iotago.ProtocolParameters
@@ -59,60 +57,62 @@ func WithTargetNetworkName(targetNetworkName string) options.Option[NodeBridge] 
 	}
 }
 
-func NewNodeBridge(ctx context.Context, address string, maxConnectionAttempts uint, log *logger.Logger, opts ...options.Option[NodeBridge]) (*NodeBridge, error) {
+func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *NodeBridge {
+	return options.Apply(&NodeBridge{
+		WrappedLogger:     logger.NewWrappedLogger(log),
+		targetNetworkName: "",
+		Events: &Events{
+			LatestMilestoneChanged:    events.NewEvent(MilestoneCaller),
+			ConfirmedMilestoneChanged: events.NewEvent(MilestoneCaller),
+		},
+	}, opts)
+}
+
+func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionAttempts uint) error {
 	conn, err := grpc.Dial(address,
 		grpc.WithChainUnaryInterceptor(grpcretry.UnaryClientInterceptor(), grpcprometheus.UnaryClientInterceptor),
 		grpc.WithStreamInterceptor(grpcprometheus.StreamClientInterceptor),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	client := inx.NewINXClient(conn)
+	n.conn = conn
+	n.client = inx.NewINXClient(conn)
+
 	retryBackoff := func(_ uint) time.Duration {
-		log.Info("> retrying INX connection to node ...")
+		n.LogInfo("> retrying INX connection to node ...")
 		return 1 * time.Second
 	}
 
-	log.Info("Connecting to node and reading node configuration ...")
-	nodeConfig, err := client.ReadNodeConfiguration(ctx, &inx.NoParams{}, grpcretry.WithMax(maxConnectionAttempts), grpcretry.WithBackoff(retryBackoff))
+	n.LogInfo("Connecting to node and reading node configuration ...")
+	nodeConfig, err := n.client.ReadNodeConfiguration(ctx, &inx.NoParams{}, grpcretry.WithMax(maxConnectionAttempts), grpcretry.WithBackoff(retryBackoff))
 	if err != nil {
-		return nil, err
+		return err
 	}
+	n.NodeConfig = nodeConfig
 
-	log.Info("Reading node status ...")
-	nodeStatus, err := client.ReadNodeStatus(ctx, &inx.NoParams{})
+	n.LogInfo("Reading node status ...")
+	nodeStatus, err := n.client.ReadNodeStatus(ctx, &inx.NoParams{})
 	if err != nil {
-		return nil, err
+		return err
 	}
+	n.nodeStatus = nodeStatus
 
 	protoParams, err := protocolParametersFromRaw(nodeStatus.GetCurrentProtocolParameters())
 	if err != nil {
-		return nil, err
+		return err
 	}
+	n.protocolParameters = protoParams
 
-	nb := options.Apply(&NodeBridge{
-		WrappedLogger:     logger.NewWrappedLogger(log),
-		targetNetworkName: "",
-		conn:              conn,
-		client:            client,
-		NodeConfig:        nodeConfig,
-		Events: &Events{
-			LatestMilestoneChanged:    events.NewEvent(MilestoneCaller),
-			ConfirmedMilestoneChanged: events.NewEvent(MilestoneCaller),
-		},
-		nodeStatus:         nodeStatus,
-		protocolParameters: protoParams,
-	}, opts)
-
-	if nb.targetNetworkName != "" {
+	if n.targetNetworkName != "" {
 		// we need to check for the correct target network name
-		if nb.targetNetworkName != protoParams.NetworkName {
-			return nil, fmt.Errorf("network name mismatch, networkName: \"%s\", targetNetworkName: \"%s\"", protoParams.NetworkName, nb.targetNetworkName)
+		if n.targetNetworkName != protoParams.NetworkName {
+			return fmt.Errorf("network name mismatch, networkName: \"%s\", targetNetworkName: \"%s\"", protoParams.NetworkName, n.targetNetworkName)
 		}
 	}
 
-	return nb, nil
+	return nil
 }
 
 func (n *NodeBridge) Run(ctx context.Context) {
