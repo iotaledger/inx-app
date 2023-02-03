@@ -38,12 +38,20 @@ var (
 
 func provide(c *dig.Container) error {
 	return c.Provide(func() (*nodebridge.NodeBridge, error) {
-		return nodebridge.NewNodeBridge(CoreComponent.Daemon().ContextStopped(),
-			ParamsINX.Address,
-			ParamsINX.MaxConnectionAttempts,
+		nodeBridge := nodebridge.NewNodeBridge(
 			CoreComponent.Logger(),
 			nodebridge.WithTargetNetworkName(ParamsINX.TargetNetworkName),
 		)
+
+		if err := nodeBridge.Connect(
+			CoreComponent.Daemon().ContextStopped(),
+			ParamsINX.Address,
+			ParamsINX.MaxConnectionAttempts,
+		); err != nil {
+			return nil, err
+		}
+
+		return nodeBridge, nil
 	})
 }
 
