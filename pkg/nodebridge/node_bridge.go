@@ -36,6 +36,7 @@ type NodeBridge struct {
 	NodeConfig         *inx.NodeConfiguration
 	nodeStatusMutex    sync.RWMutex
 	nodeStatus         *inx.NodeStatus
+	nodeStatusCtx      context.Context //nolint:containedctx
 	protocolParameters *iotago.ProtocolParameters
 }
 

@@ -18,23 +18,42 @@ const (
 	ListenToNodeStatusCooldownInMilliseconds = 1_000
 )
 
-func (n *NodeBridge) NodeStatus() *inx.NodeStatus {
+func (n *NodeBridge) NodeStatus() (*inx.NodeStatus, error) {
 	n.nodeStatusMutex.RLock()
 	defer n.nodeStatusMutex.RUnlock()
 
-	return n.nodeStatus
+	if n.nodeStatusCtx != nil && n.nodeStatusCtx.Err() != nil {
+		return nil, n.nodeStatusCtx.Err()
+	}
+
+	return n.nodeStatus, nil
 }
 
-func (n *NodeBridge) IsNodeHealthy() bool {
-	return n.NodeStatus().GetIsHealthy()
+func (n *NodeBridge) IsNodeHealthy() (bool, error) {
+	nodeStatus, err := n.NodeStatus()
+	if err != nil {
+		return false, err
+	}
+
+	return nodeStatus.GetIsHealthy(), nil
 }
 
-func (n *NodeBridge) IsNodeSynced() bool {
-	return n.NodeStatus().GetIsSynced()
+func (n *NodeBridge) IsNodeSynced() (bool, error) {
+	nodeStatus, err := n.NodeStatus()
+	if err != nil {
+		return false, err
+	}
+
+	return nodeStatus.GetIsSynced(), nil
 }
 
-func (n *NodeBridge) IsNodeAlmostSynced() bool {
-	return n.NodeStatus().GetIsAlmostSynced()
+func (n *NodeBridge) IsNodeAlmostSynced() (bool, error) {
+	nodeStatus, err := n.NodeStatus()
+	if err != nil {
+		return false, err
+	}
+
+	return nodeStatus.GetIsAlmostSynced(), nil
 }
 
 func (n *NodeBridge) ProtocolParameters() *iotago.ProtocolParameters {
@@ -59,6 +78,9 @@ func protocolParametersFromRaw(params *inx.RawProtocolParameters) (*iotago.Proto
 
 func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.CancelFunc) error {
 	defer cancel()
+
+	// set the context, so we can track when listening to node status updates was stopped
+	n.nodeStatusCtx = ctx
 
 	stream, err := n.client.ListenToNodeStatus(ctx, &inx.NodeStatusRequest{CooldownInMilliseconds: ListenToNodeStatusCooldownInMilliseconds})
 	if err != nil {
