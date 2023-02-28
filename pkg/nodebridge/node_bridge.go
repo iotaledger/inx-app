@@ -12,9 +12,9 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/iotaledger/hive.go/core/events"
-	"github.com/iotaledger/hive.go/core/generics/options"
 	"github.com/iotaledger/hive.go/core/logger"
+	"github.com/iotaledger/hive.go/runtime/event"
+	"github.com/iotaledger/hive.go/runtime/options"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
@@ -40,13 +40,8 @@ type NodeBridge struct {
 }
 
 type Events struct {
-	LatestMilestoneChanged    *events.Event
-	ConfirmedMilestoneChanged *events.Event
-}
-
-func MilestoneCaller(handler interface{}, params ...interface{}) {
-	//nolint:forcetypeassert // we will replace that with generic events anyway
-	handler.(func(metadata *Milestone))(params[0].(*Milestone))
+	LatestMilestoneChanged    *event.Event1[*Milestone]
+	ConfirmedMilestoneChanged *event.Event1[*Milestone]
 }
 
 // WithTargetNetworkName checks if the network name of the node is equal to the given targetNetworkName.
@@ -62,8 +57,8 @@ func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *Node
 		WrappedLogger:     logger.NewWrappedLogger(log),
 		targetNetworkName: "",
 		Events: &Events{
-			LatestMilestoneChanged:    events.NewEvent(MilestoneCaller),
-			ConfirmedMilestoneChanged: events.NewEvent(MilestoneCaller),
+			LatestMilestoneChanged:    event.New1[*Milestone](),
+			ConfirmedMilestoneChanged: event.New1[*Milestone](),
 		},
 	}, opts)
 }
