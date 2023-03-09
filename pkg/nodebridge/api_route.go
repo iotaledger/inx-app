@@ -14,7 +14,7 @@ func (n *NodeBridge) INXNodeClient() *nodeclient.Client {
 	return inx.NewNodeclientOverINX(n.client)
 }
 
-func (n *NodeBridge) RegisterAPIRoute(ctx context.Context, route string, bindAddress string) error {
+func (n *NodeBridge) RegisterAPIRoute(ctx context.Context, route string, bindAddress string, path string) error {
 	bindAddressParts := strings.Split(bindAddress, ":")
 	if len(bindAddressParts) != 2 {
 		return fmt.Errorf("invalid address %s", bindAddress)
@@ -28,6 +28,7 @@ func (n *NodeBridge) RegisterAPIRoute(ctx context.Context, route string, bindAdd
 		Route: route,
 		Host:  bindAddressParts[0],
 		Port:  uint32(port),
+		Path:  path,
 	}
 
 	if err != nil {
