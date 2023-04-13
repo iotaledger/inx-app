@@ -19,15 +19,15 @@ var (
 )
 
 type LedgerUpdate struct {
-	MilestoneIndex iotago.SlotIndex
-	Consumed       []*inx.LedgerSpent
-	Created        []*inx.LedgerOutput
+	SlotIndex iotago.SlotIndex
+	Consumed  []*inx.LedgerSpent
+	Created   []*inx.LedgerOutput
 }
 
 func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint32, endIndex uint32, consume func(update *LedgerUpdate) error) error {
-	req := &inx.MilestoneRangeRequest{
-		StartMilestoneIndex: startIndex,
-		EndMilestoneIndex:   endIndex,
+	req := &inx.CommitmentRangeRequest{
+		StartSlotIndex: startIndex,
+		EndSlotIndex:   endIndex,
 	}
 
 	stream, err := n.client.ListenToLedgerUpdates(ctx, req)
@@ -62,9 +62,9 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint3
 					return ErrLedgerUpdateTransactionAlreadyInProgress
 				}
 				update = &LedgerUpdate{
-					MilestoneIndex: op.BatchMarker.GetMilestoneIndex(),
-					Consumed:       make([]*inx.LedgerSpent, 0),
-					Created:        make([]*inx.LedgerOutput, 0),
+					SlotIndex: iotago.SlotIndex(op.BatchMarker.GetMilestoneIndex()),
+					Consumed:  make([]*inx.LedgerSpent, 0),
+					Created:   make([]*inx.LedgerOutput, 0),
 				}
 
 			//nolint:nosnakecase // grpc uses underscores
@@ -75,7 +75,7 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint3
 				}
 				if uint32(len(update.Consumed)) != op.BatchMarker.GetConsumedCount() ||
 					uint32(len(update.Created)) != op.BatchMarker.GetCreatedCount() ||
-					update.SlotIndex != op.BatchMarker.SlotIndex {
+					update.SlotIndex != iotago.SlotIndex(op.BatchMarker.MilestoneIndex) {
 					return ErrLedgerUpdateEndedAbruptly
 				}
 

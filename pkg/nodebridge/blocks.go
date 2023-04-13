@@ -8,13 +8,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
 )
 
 func (n *NodeBridge) SubmitBlock(ctx context.Context, block *iotago.Block) (iotago.BlockID, error) {
-	blk, err := inx.WrapBlock(block)
+	blk, err := inx.WrapBlock(block, n.api)
 	if err != nil {
 		return iotago.BlockID{}, err
 	}
@@ -37,7 +36,7 @@ func (n *NodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago
 		return nil, err
 	}
 
-	return inxMsg.UnwrapBlock(serializer.DeSeriModeNoValidation, nil)
+	return inxMsg.UnwrapBlock(n.api)
 }
 
 func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFunc, consumer func(block *iotago.Block)) error {
@@ -62,7 +61,7 @@ func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFu
 			break
 		}
 
-		consumer(block.MustUnwrapBlock(serializer.DeSeriModeNoValidation, nil))
+		consumer(block.MustUnwrapBlock(n.api))
 	}
 
 	//nolint:nilerr // false positive

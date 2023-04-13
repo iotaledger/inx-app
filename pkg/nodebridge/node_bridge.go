@@ -27,6 +27,7 @@ const (
 type NodeBridge struct {
 	// the logger used to log events.
 	*logger.WrappedLogger
+	api iotago.API
 
 	targetNetworkName string
 	Events            *Events
@@ -40,8 +41,8 @@ type NodeBridge struct {
 }
 
 type Events struct {
-	LatestMilestoneChanged    *event.Event1[*Milestone]
-	ConfirmedMilestoneChanged *event.Event1[*Milestone]
+	LatestCommittedSlotChanged *event.Event1[*Commitment]
+	ConfirmedSlotChanged       *event.Event1[*Commitment]
 }
 
 // WithTargetNetworkName checks if the network name of the node is equal to the given targetNetworkName.
@@ -52,13 +53,21 @@ func WithTargetNetworkName(targetNetworkName string) options.Option[NodeBridge] 
 	}
 }
 
+// WithAPI sets the API used to decode and encode the protocol objects.
+func WithAPI(api iotago.API) options.Option[NodeBridge] {
+	return func(n *NodeBridge) {
+		n.api = api
+	}
+}
+
 func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *NodeBridge {
 	return options.Apply(&NodeBridge{
 		WrappedLogger:     logger.NewWrappedLogger(log),
+		api:               iotago.V3API(&iotago.ProtocolParameters{}),
 		targetNetworkName: "",
 		Events: &Events{
-			LatestMilestoneChanged:    event.New1[*Milestone](),
-			ConfirmedMilestoneChanged: event.New1[*Milestone](),
+			LatestCommittedSlotChanged: event.New1[*Commitment](),
+			ConfirmedSlotChanged:       event.New1[*Commitment](),
 		},
 	}, opts)
 }
@@ -94,7 +103,7 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 	}
 	n.nodeStatus = nodeStatus
 
-	protoParams, err := protocolParametersFromRaw(nodeStatus.GetCurrentProtocolParameters())
+	protoParams, err := protocolParametersFromRaw(nodeStatus.GetCurrentProtocolParameters(), n.api)
 	if err != nil {
 		return err
 	}
@@ -133,7 +142,10 @@ func (n *NodeBridge) Client() inx.INXClient {
 // It retries every second until the given context is done.
 func (n *NodeBridge) Indexer(ctx context.Context) (nodeclient.IndexerClient, error) {
 
-	nodeClient := n.INXNodeClient()
+	nodeClient, err := n.INXNodeClient()
+	if err != nil {
+		return nil, err
+	}
 
 	getIndexerClient := func(ctx context.Context, nodeClient *nodeclient.Client) (nodeclient.IndexerClient, error) {
 		ctxTimeout, cancelTimeout := context.WithTimeout(ctx, 1*time.Second)
@@ -165,7 +177,10 @@ func (n *NodeBridge) Indexer(ctx context.Context) (nodeclient.IndexerClient, err
 // It retries every second until the given context is done.
 func (n *NodeBridge) EventAPI(ctx context.Context) (*nodeclient.EventAPIClient, error) {
 
-	nodeClient := n.INXNodeClient()
+	nodeClient, err := n.INXNodeClient()
+	if err != nil {
+		return nil, err
+	}
 
 	getEventAPIClient := func(ctx context.Context, nodeClient *nodeclient.Client) (*nodeclient.EventAPIClient, error) {
 		ctxTimeout, cancelTimeout := context.WithTimeout(ctx, 1*time.Second)

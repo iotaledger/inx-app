@@ -20,9 +20,9 @@ import (
 var ErrAlreadyRegistered = errors.New("callback for block ID is already registered")
 
 type TangleListener struct {
-	nodeBridge                 *NodeBridge
-	blockSolidNotifier         *valuenotifier.Notifier[iotago.BlockID]
-	milestoneConfirmedNotifier *valuenotifier.Notifier[uint32]
+	nodeBridge                  *NodeBridge
+	blockSolidNotifier          *valuenotifier.Notifier[iotago.BlockID]
+	commitmentConfirmedNotifier *valuenotifier.Notifier[uint32]
 
 	blockSolidCallbacks     map[iotago.BlockID]BlockSolidCallback
 	blockSolidCallbacksLock sync.Mutex
@@ -38,10 +38,10 @@ type BlockSolidCallback = func(*inx.BlockMetadata)
 
 func NewTangleListener(nodeBridge *NodeBridge) *TangleListener {
 	return &TangleListener{
-		nodeBridge:                 nodeBridge,
-		blockSolidNotifier:         valuenotifier.New[iotago.BlockID](),
-		milestoneConfirmedNotifier: valuenotifier.New[uint32](),
-		blockSolidCallbacks:        map[iotago.BlockID]BlockSolidCallback{},
+		nodeBridge:                  nodeBridge,
+		blockSolidNotifier:          valuenotifier.New[iotago.BlockID](),
+		commitmentConfirmedNotifier: valuenotifier.New[uint32](),
+		blockSolidCallbacks:         map[iotago.BlockID]BlockSolidCallback{},
 		Events: &TangleListenerEvents{
 			BlockSolid: event.New1[*inx.BlockMetadata](),
 		},
@@ -132,23 +132,23 @@ func (t *TangleListener) RegisterBlockSolidEvent(ctx context.Context, blockID io
 	return blockSolidListener, nil
 }
 
-// RegisterMilestoneConfirmedEvent registers an event for when the milestone with msIndex gets confirmed.
-// If the milestone is already confirmed, the event is triggered imitatively.
-func (t *TangleListener) RegisterMilestoneConfirmedEvent(msIndex uint32) *valuenotifier.Listener {
-	milestoneConfirmedListener := t.milestoneConfirmedNotifier.Listener(msIndex)
+// RegisterSlotConfirmedEvent registers an event for when the slot with sIndex gets confirmed.
+// If the slot is already confirmed, the event is triggered imitatively.
+func (t *TangleListener) RegisterSlotConfirmedEvent(sIndex uint32) *valuenotifier.Listener {
+	slotConfirmedListener := t.commitmentConfirmedNotifier.Listener(sIndex)
 
-	// check if the milestone is already confirmed
-	ms, err := t.nodeBridge.ConfirmedMilestone()
+	// check if the slot is already confirmed
+	comm, err := t.nodeBridge.ConfirmedCommitment()
 	if err != nil {
 		// this should never fail
 		panic(err)
 	}
-	if ms != nil && ms.Milestone.Index >= msIndex {
-		// trigger the sync event, because the milestone is already confirmed
-		t.milestoneConfirmedNotifier.Notify(msIndex)
+	if comm != nil && comm.Commitment.Index >= iotago.SlotIndex(sIndex) {
+		// trigger the sync event, because the slot is already confirmed
+		t.commitmentConfirmedNotifier.Notify(sIndex)
 	}
 
-	return milestoneConfirmedListener
+	return slotConfirmedListener
 }
 
 func (t *TangleListener) Run(ctx context.Context) {
@@ -161,8 +161,8 @@ func (t *TangleListener) Run(ctx context.Context) {
 		}
 	}()
 
-	hook := t.nodeBridge.Events.ConfirmedMilestoneChanged.Hook(func(ms *Milestone) {
-		t.milestoneConfirmedNotifier.Notify(ms.Milestone.Index)
+	hook := t.nodeBridge.Events.ConfirmedSlotChanged.Hook(func(c *Commitment) {
+		t.commitmentConfirmedNotifier.Notify(uint32(c.Commitment.Index))
 	})
 	defer hook.Unhook()
 	<-c.Done()

@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
 )
@@ -44,13 +43,13 @@ func (n *NodeBridge) ProtocolParameters() *iotago.ProtocolParameters {
 	return n.protocolParameters
 }
 
-func protocolParametersFromRaw(params *inx.RawProtocolParameters) (*iotago.ProtocolParameters, error) {
+func protocolParametersFromRaw(params *inx.RawProtocolParameters, api iotago.API) (*iotago.ProtocolParameters, error) {
 	if params.ProtocolVersion != supportedProtocolVersion {
 		return nil, fmt.Errorf("unsupported protocol version %d vs %d", params.ProtocolVersion, supportedProtocolVersion)
 	}
 
 	protoParams := &iotago.ProtocolParameters{}
-	if _, err := protoParams.Deserialize(params.GetParams(), serializer.DeSeriModeNoValidation, nil); err != nil {
+	if _, err := api.Decode(params.GetParams(), &protoParams); err != nil {
 		return nil, err
 	}
 
@@ -91,23 +90,21 @@ func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.Canc
 
 func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 
-	var latestMilestoneChanged bool
-	var confirmedMilestoneChanged bool
+	var latestCommittedSlotChanged bool
+	var confirmedCommitmentChanged bool
 
 	updateStatus := func() error {
 		n.nodeStatusMutex.Lock()
 		defer n.nodeStatusMutex.Unlock()
-
-		if nodeStatus.GetLatestMilestone().GetMilestoneInfo().GetMilestoneIndex() > n.nodeStatus.GetLatestMilestone().GetMilestoneInfo().GetMilestoneIndex() {
-			latestMilestoneChanged = true
+		if nodeStatus.GetLatestCommitment().GetCommitmentInfo().GetCommitmentIndex() > n.nodeStatus.GetLatestCommitment().GetCommitmentInfo().GetCommitmentIndex() {
+			latestCommittedSlotChanged = true
 		}
-
-		if nodeStatus.GetConfirmedMilestone().GetMilestoneInfo().GetMilestoneIndex() > n.nodeStatus.GetConfirmedMilestone().GetMilestoneInfo().GetMilestoneIndex() {
-			confirmedMilestoneChanged = true
+		if nodeStatus.GetConfirmedCommitment().GetCommitmentInfo().GetCommitmentIndex() > n.nodeStatus.GetConfirmedCommitment().GetCommitmentInfo().GetCommitmentIndex() {
+			confirmedCommitmentChanged = true
 		}
 		n.nodeStatus = nodeStatus
 
-		protocolParams, err := protocolParametersFromRaw(nodeStatus.GetCurrentProtocolParameters())
+		protocolParams, err := protocolParametersFromRaw(nodeStatus.GetCurrentProtocolParameters(), n.api)
 		if err != nil {
 			return err
 		}
@@ -120,17 +117,17 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 		return err
 	}
 
-	if latestMilestoneChanged {
-		milestone, err := milestoneFromINXMilestone(nodeStatus.GetLatestMilestone())
+	if latestCommittedSlotChanged {
+		commitment, err := commitmentFromINXCommitment(nodeStatus.GetLatestCommitment(), n.api)
 		if err == nil {
-			n.Events.LatestMilestoneChanged.Trigger(milestone)
+			n.Events.LatestCommittedSlotChanged.Trigger(commitment)
 		}
 	}
 
-	if confirmedMilestoneChanged {
-		milestone, err := milestoneFromINXMilestone(nodeStatus.GetConfirmedMilestone())
+	if confirmedCommitmentChanged {
+		commitment, err := commitmentFromINXCommitment(nodeStatus.GetConfirmedCommitment(), n.api)
 		if err == nil {
-			n.Events.ConfirmedMilestoneChanged.Trigger(milestone)
+			n.Events.ConfirmedSlotChanged.Trigger(commitment)
 		}
 	}
 

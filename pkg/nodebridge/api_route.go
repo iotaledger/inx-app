@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/iota.go/v4/nodeclient"
 )
 
-func (n *NodeBridge) INXNodeClient() *nodeclient.Client {
+func (n *NodeBridge) INXNodeClient() (*nodeclient.Client, error) {
 	return inx.NewNodeclientOverINX(n.client)
 }
 
