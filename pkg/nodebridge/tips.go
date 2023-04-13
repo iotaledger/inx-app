@@ -4,7 +4,7 @@ import (
 	"context"
 
 	inx "github.com/iotaledger/inx/go"
-	iotago "github.com/iotaledger/iota.go/v3"
+	iotago "github.com/iotaledger/iota.go/v4"
 )
 
 func (n *NodeBridge) RequestTips(ctx context.Context, count uint32, allowSemiLazy bool) (iotago.BlockIDs, error) {

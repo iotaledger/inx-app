@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	inx "github.com/iotaledger/inx/go"
-	"github.com/iotaledger/iota.go/v3/nodeclient"
+	"github.com/iotaledger/iota.go/v4/nodeclient"
 )
 
 func (n *NodeBridge) INXNodeClient() *nodeclient.Client {

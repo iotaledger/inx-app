@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	inx "github.com/iotaledger/inx/go"
-	iotago "github.com/iotaledger/iota.go/v3"
+	iotago "github.com/iotaledger/iota.go/v4"
 )
 
 var (
@@ -19,7 +19,7 @@ var (
 )
 
 type LedgerUpdate struct {
-	MilestoneIndex iotago.MilestoneIndex
+	MilestoneIndex iotago.SlotIndex
 	Consumed       []*inx.LedgerSpent
 	Created        []*inx.LedgerOutput
 }
@@ -75,7 +75,7 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint3
 				}
 				if uint32(len(update.Consumed)) != op.BatchMarker.GetConsumedCount() ||
 					uint32(len(update.Created)) != op.BatchMarker.GetCreatedCount() ||
-					update.MilestoneIndex != op.BatchMarker.MilestoneIndex {
+					update.SlotIndex != op.BatchMarker.SlotIndex {
 					return ErrLedgerUpdateEndedAbruptly
 				}
 
