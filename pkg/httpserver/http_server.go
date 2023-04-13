@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
+	iotago "github.com/iotaledger/iota.go/v4"
 )
 
 const (
@@ -202,12 +202,12 @@ func ParseBech32AddressQueryParam(c echo.Context, prefix iotago.NetworkPrefix, p
 func ParseBlockIDParam(c echo.Context, paramName string) (iotago.BlockID, error) {
 	blockIDHex := strings.ToLower(c.Param(paramName))
 
-	blockID, err := iotago.BlockIDFromHexString(blockIDHex)
+	blockIDs, err := iotago.BlockIDsFromHexString([]string{blockIDHex})
 	if err != nil {
 		return iotago.EmptyBlockID(), errors.WithMessagef(ErrInvalidParameter, "invalid block ID: %s, error: %s", blockIDHex, err)
 	}
 
-	return blockID, nil
+	return blockIDs[0], nil
 }
 
 func ParseTransactionIDParam(c echo.Context, paramName string) (iotago.TransactionID, error) {
@@ -237,38 +237,6 @@ func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, erro
 	}
 
 	return outputID, nil
-}
-
-func ParseMilestoneIndexParam(c echo.Context, paramName string) (iotago.MilestoneIndex, error) {
-	milestoneIndex := strings.ToLower(c.Param(paramName))
-	if milestoneIndex == "" {
-		return 0, errors.WithMessagef(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
-	}
-
-	msIndex, err := strconv.ParseUint(milestoneIndex, 10, 32)
-	if err != nil {
-		return 0, errors.WithMessagef(ErrInvalidParameter, "invalid milestone index: %s, error: %s", milestoneIndex, err)
-	}
-
-	return iotago.MilestoneIndex(msIndex), nil
-}
-
-func ParseMilestoneIDParam(c echo.Context, paramName string) (*iotago.MilestoneID, error) {
-	milestoneIDHex := strings.ToLower(c.Param(paramName))
-
-	milestoneIDBytes, err := iotago.DecodeHex(milestoneIDHex)
-	if err != nil {
-		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid milestone ID: %s, error: %s", milestoneIDHex, err)
-	}
-
-	if len(milestoneIDBytes) != iotago.MilestoneIDLength {
-		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid milestone ID: %s, invalid length: %d", milestoneIDHex, len(milestoneIDBytes))
-	}
-
-	var milestoneID iotago.MilestoneID
-	copy(milestoneID[:], milestoneIDBytes)
-
-	return &milestoneID, nil
 }
 
 func ParseAliasIDParam(c echo.Context, paramName string) (*iotago.AliasID, error) {
