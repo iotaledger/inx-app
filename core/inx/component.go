@@ -14,14 +14,13 @@ import (
 const PriorityDisconnectINX = 0
 
 func init() {
-	CoreComponent = &app.CoreComponent{
-		Component: &app.Component{
-			Name:     "INX",
-			DepsFunc: func(cDeps dependencies) { deps = cDeps },
-			Params:   params,
-			Provide:  provide,
-			Run:      run,
-		},
+	Component = &app.Component{
+		Name:      "INX",
+		DepsFunc:  func(cDeps dependencies) { deps = cDeps },
+		Params:    params,
+		Provide:   provide,
+		Run:       run,
+		IsEnabled: func() bool { return true },
 	}
 }
 
@@ -32,19 +31,19 @@ type dependencies struct {
 }
 
 var (
-	CoreComponent *app.CoreComponent
-	deps          dependencies
+	Component *app.Component
+	deps      dependencies
 )
 
 func provide(c *dig.Container) error {
 	return c.Provide(func() (*nodebridge.NodeBridge, error) {
 		nodeBridge := nodebridge.NewNodeBridge(
-			CoreComponent.Logger(),
+			Component.Logger(),
 			nodebridge.WithTargetNetworkName(ParamsINX.TargetNetworkName),
 		)
 
 		if err := nodeBridge.Connect(
-			CoreComponent.Daemon().ContextStopped(),
+			Component.Daemon().ContextStopped(),
 			ParamsINX.Address,
 			ParamsINX.MaxConnectionAttempts,
 		); err != nil {
@@ -56,10 +55,10 @@ func provide(c *dig.Container) error {
 }
 
 func run() error {
-	return CoreComponent.Daemon().BackgroundWorker("INX", func(ctx context.Context) {
-		CoreComponent.LogInfo("Starting NodeBridge ...")
+	return Component.Daemon().BackgroundWorker("INX", func(ctx context.Context) {
+		Component.LogInfo("Starting NodeBridge ...")
 		deps.NodeBridge.Run(ctx)
-		CoreComponent.LogInfo("Stopped NodeBridge")
+		Component.LogInfo("Stopped NodeBridge")
 
 		if !errors.Is(ctx.Err(), context.Canceled) {
 			deps.ShutdownHandler.SelfShutdown("INX connection to node dropped", true)
