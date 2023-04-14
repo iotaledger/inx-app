@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
-	iotago "github.com/iotaledger/iota.go/v4"
 )
 
 const PriorityDisconnectINX = 0
@@ -40,7 +39,6 @@ func provide(c *dig.Container) error {
 	return c.Provide(func() (*nodebridge.NodeBridge, error) {
 		nodeBridge := nodebridge.NewNodeBridge(
 			Component.Logger(),
-			nodebridge.WithAPI(iotago.V3API(&iotago.ProtocolParameters{})),
 			nodebridge.WithTargetNetworkName(ParamsINX.TargetNetworkName),
 		)
 

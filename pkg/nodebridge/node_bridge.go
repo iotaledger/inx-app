@@ -53,17 +53,9 @@ func WithTargetNetworkName(targetNetworkName string) options.Option[NodeBridge] 
 	}
 }
 
-// WithAPI sets the API used to decode and encode the protocol objects.
-func WithAPI(api iotago.API) options.Option[NodeBridge] {
-	return func(n *NodeBridge) {
-		n.api = api
-	}
-}
-
 func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *NodeBridge {
 	return options.Apply(&NodeBridge{
 		WrappedLogger:     logger.NewWrappedLogger(log),
-		api:               iotago.V3API(&iotago.ProtocolParameters{}),
 		targetNetworkName: "",
 		Events: &Events{
 			LatestCommittedSlotChanged: event.New1[*Commitment](),
@@ -108,6 +100,8 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 		return err
 	}
 	n.protocolParameters = protoParams
+
+	n.api = iotago.V3API(n.protocolParameters)
 
 	if n.targetNetworkName != "" {
 		// we need to check for the correct target network name
