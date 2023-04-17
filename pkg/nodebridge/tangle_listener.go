@@ -122,6 +122,9 @@ func (t *TangleListener) RegisterBlockSolidEvent(ctx context.Context, blockID io
 			return blockSolidListener, nil
 		}
 
+		// in case of another error, we need to deregister the listener
+		blockSolidListener.Deregister()
+
 		return nil, err
 	}
 	if metadata.Solid {
