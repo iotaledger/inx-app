@@ -199,6 +199,17 @@ func ParseBech32AddressQueryParam(c echo.Context, prefix iotago.NetworkPrefix, p
 	return bech32Address, nil
 }
 
+func ParseCommitmentIDParam(c echo.Context, paramName string) (iotago.CommitmentID, error) {
+	commitmentIDHex := strings.ToLower(c.Param(paramName))
+
+	commitmentIDs, err := iotago.BlockIDsFromHexString([]string{commitmentIDHex})
+	if err != nil {
+		return iotago.EmptyBlockID(), errors.WithMessagef(ErrInvalidParameter, "invalid commitment ID: %s, error: %s", commitmentIDHex, err)
+	}
+
+	return commitmentIDs[0], nil
+}
+
 func ParseBlockIDParam(c echo.Context, paramName string) (iotago.BlockID, error) {
 	blockIDHex := strings.ToLower(c.Param(paramName))
 
@@ -291,6 +302,26 @@ func ParseFoundryIDParam(c echo.Context, paramName string) (*iotago.FoundryID, e
 	copy(foundryID[:], foundryIDBytes)
 
 	return &foundryID, nil
+}
+
+func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uint64, error) {
+	intString := strings.ToLower(c.Param(paramName))
+	if intString == "" {
+		return 0, errors.WithMessagef(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+	}
+
+	value, err := strconv.ParseUint(intString, 10, 64)
+	if err != nil {
+		return 0, errors.WithMessagef(ErrInvalidParameter, "invalid value: %s, error: %s", intString, err)
+	}
+
+	if len(maxValue) > 0 {
+		if uint64(value) > maxValue[0] {
+			return 0, errors.WithMessagef(ErrInvalidParameter, "invalid value: %s, higher than the max number %d", intString, maxValue)
+		}
+	}
+
+	return uint64(value), nil
 }
 
 func GetURL(protocol string, host string, port uint16, path ...string) string {
