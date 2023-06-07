@@ -250,22 +250,22 @@ func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, erro
 	return outputID, nil
 }
 
-func ParseAliasIDParam(c echo.Context, paramName string) (*iotago.AliasID, error) {
+func ParseAliasIDParam(c echo.Context, paramName string) (*iotago.AccountID, error) {
 	aliasIDParam := strings.ToLower(c.Param(paramName))
 
-	aliasIDBytes, err := iotago.DecodeHex(aliasIDParam)
+	accountIDBytes, err := iotago.DecodeHex(aliasIDParam)
 	if err != nil {
 		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid alias ID: %s, error: %s", aliasIDParam, err)
 	}
 
-	if len(aliasIDBytes) != iotago.AliasIDLength {
+	if len(accountIDBytes) != iotago.AccountIDLength {
 		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid alias ID: %s, error: %s", aliasIDParam, err)
 	}
 
-	var aliasID iotago.AliasID
-	copy(aliasID[:], aliasIDBytes)
+	var accountID iotago.AccountID
+	copy(accountID[:], accountIDBytes)
 
-	return &aliasID, nil
+	return &accountID, nil
 }
 
 func ParseNFTIDParam(c echo.Context, paramName string) (*iotago.NFTID, error) {
