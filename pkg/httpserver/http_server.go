@@ -16,6 +16,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v4"
+	"github.com/iotaledger/iota.go/v4/hexutil"
 )
 
 const (
@@ -164,7 +165,7 @@ func ParseUint32QueryParam(c echo.Context, paramName string, maxValue ...uint32)
 func ParseHexQueryParam(c echo.Context, paramName string, maxLen int) ([]byte, error) {
 	param := c.QueryParam(paramName)
 
-	paramBytes, err := iotago.DecodeHex(param)
+	paramBytes, err := hexutil.DecodeHex(param)
 	if err != nil {
 		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid param: %s, error: %s", paramName, err)
 	}
@@ -225,7 +226,7 @@ func ParseTransactionIDParam(c echo.Context, paramName string) (iotago.Transacti
 	transactionID := iotago.TransactionID{}
 	transactionIDHex := strings.ToLower(c.Param(paramName))
 
-	transactionIDBytes, err := iotago.DecodeHex(transactionIDHex)
+	transactionIDBytes, err := hexutil.DecodeHex(transactionIDHex)
 	if err != nil {
 		return transactionID, errors.WithMessagef(ErrInvalidParameter, "invalid transaction ID: %s, error: %s", transactionIDHex, err)
 	}
@@ -253,7 +254,7 @@ func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, erro
 func ParseAliasIDParam(c echo.Context, paramName string) (*iotago.AliasID, error) {
 	aliasIDParam := strings.ToLower(c.Param(paramName))
 
-	aliasIDBytes, err := iotago.DecodeHex(aliasIDParam)
+	aliasIDBytes, err := hexutil.DecodeHex(aliasIDParam)
 	if err != nil {
 		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid alias ID: %s, error: %s", aliasIDParam, err)
 	}
@@ -271,7 +272,7 @@ func ParseAliasIDParam(c echo.Context, paramName string) (*iotago.AliasID, error
 func ParseNFTIDParam(c echo.Context, paramName string) (*iotago.NFTID, error) {
 	nftIDParam := strings.ToLower(c.Param(paramName))
 
-	nftIDBytes, err := iotago.DecodeHex(nftIDParam)
+	nftIDBytes, err := hexutil.DecodeHex(nftIDParam)
 	if err != nil {
 		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid NFT ID: %s, error: %s", nftIDParam, err)
 	}
@@ -289,7 +290,7 @@ func ParseNFTIDParam(c echo.Context, paramName string) (*iotago.NFTID, error) {
 func ParseFoundryIDParam(c echo.Context, paramName string) (*iotago.FoundryID, error) {
 	foundryIDParam := strings.ToLower(c.Param(paramName))
 
-	foundryIDBytes, err := iotago.DecodeHex(foundryIDParam)
+	foundryIDBytes, err := hexutil.DecodeHex(foundryIDParam)
 	if err != nil {
 		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid foundry ID: %s, error: %s", foundryIDParam, err)
 	}
