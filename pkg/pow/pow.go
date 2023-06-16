@@ -29,7 +29,7 @@ type RefreshTipsFunc = func() (tips iotago.BlockIDs, err error)
 
 // DoPoW does the proof-of-work required to hit the given target score.
 // The given iota.Block's nonce is automatically updated.
-func DoPoW(ctx context.Context, block *iotago.Block, deSeriMode serializer.DeSerializationMode, protoParams *iotago.ProtocolParameters, parallelism int, refreshTipsInterval time.Duration, refreshTipsFunc RefreshTipsFunc) (blockSize int, err error) {
+func DoPoW(ctx context.Context, block *iotago.Block, _ serializer.DeSerializationMode, protoParams *iotago.ProtocolParameters, parallelism int, refreshTipsInterval time.Duration, refreshTipsFunc RefreshTipsFunc) (blockSize int, err error) {
 	api := iotago.V3API(protoParams)
 
 	if len(block.StrongParents) == 0 {
