@@ -20,7 +20,7 @@ func init() {
 		Params:    params,
 		Provide:   provide,
 		Run:       run,
-		IsEnabled: func(c *dig.Container) bool { return true },
+		IsEnabled: func() bool { return true },
 	}
 }
 
