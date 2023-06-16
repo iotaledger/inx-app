@@ -317,12 +317,12 @@ func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uin
 	}
 
 	if len(maxValue) > 0 {
-		if uint64(value) > maxValue[0] {
+		if value > maxValue[0] {
 			return 0, errors.WithMessagef(ErrInvalidParameter, "invalid value: %s, higher than the max number %d", intString, maxValue)
 		}
 	}
 
-	return uint64(value), nil
+	return value, nil
 }
 
 func GetURL(protocol string, host string, port uint16, path ...string) string {
