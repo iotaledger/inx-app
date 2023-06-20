@@ -251,22 +251,22 @@ func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, erro
 	return outputID, nil
 }
 
-func ParseAliasIDParam(c echo.Context, paramName string) (*iotago.AliasID, error) {
+func ParseAliasIDParam(c echo.Context, paramName string) (*iotago.AccountID, error) {
 	aliasIDParam := strings.ToLower(c.Param(paramName))
 
-	aliasIDBytes, err := hexutil.DecodeHex(aliasIDParam)
+	accountIDBytes, err := hexutil.DecodeHex(aliasIDParam)
 	if err != nil {
 		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid alias ID: %s, error: %s", aliasIDParam, err)
 	}
 
-	if len(aliasIDBytes) != iotago.AliasIDLength {
+	if len(accountIDBytes) != iotago.AccountIDLength {
 		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid alias ID: %s, error: %s", aliasIDParam, err)
 	}
 
-	var aliasID iotago.AliasID
-	copy(aliasID[:], aliasIDBytes)
+	var accountID iotago.AccountID
+	copy(accountID[:], accountIDBytes)
 
-	return &aliasID, nil
+	return &accountID, nil
 }
 
 func ParseNFTIDParam(c echo.Context, paramName string) (*iotago.NFTID, error) {
@@ -317,12 +317,12 @@ func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uin
 	}
 
 	if len(maxValue) > 0 {
-		if uint64(value) > maxValue[0] {
+		if value > maxValue[0] {
 			return 0, errors.WithMessagef(ErrInvalidParameter, "invalid value: %s, higher than the max number %d", intString, maxValue)
 		}
 	}
 
-	return uint64(value), nil
+	return value, nil
 }
 
 func GetURL(protocol string, host string, port uint16, path ...string) string {
