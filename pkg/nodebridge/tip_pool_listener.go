@@ -2,7 +2,6 @@ package nodebridge
 
 import (
 	"context"
-	"errors"
 	"io"
 	"sync"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/iotaledger/hive.go/ierrors"
 	inx "github.com/iotaledger/inx/go"
 )
 
@@ -53,7 +53,7 @@ func (t *TipPoolListener) listenToTipsMetrics(ctx context.Context, cancel contex
 	for {
 		tipsMetric, err := stream.Recv()
 		if err != nil {
-			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
+			if ierrors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 			t.nodeBridge.LogErrorf("ListenToTipsMetrics: %s", err.Error())

@@ -3,11 +3,11 @@ package inx
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/shutdown"
+	"github.com/iotaledger/hive.go/ierrors"
 	"github.com/iotaledger/inx-app/pkg/nodebridge"
 )
 
@@ -20,7 +20,7 @@ func init() {
 		Params:    params,
 		Provide:   provide,
 		Run:       run,
-		IsEnabled: func() bool { return true },
+		IsEnabled: func(*dig.Container) bool { return true },
 	}
 }
 
@@ -60,7 +60,7 @@ func run() error {
 		deps.NodeBridge.Run(ctx)
 		Component.LogInfo("Stopped NodeBridge")
 
-		if !errors.Is(ctx.Err(), context.Canceled) {
+		if !ierrors.Is(ctx.Err(), context.Canceled) {
 			deps.ShutdownHandler.SelfShutdown("INX connection to node dropped", true)
 		}
 	}, PriorityDisconnectINX)

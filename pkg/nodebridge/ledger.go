@@ -2,20 +2,20 @@ package nodebridge
 
 import (
 	"context"
-	"errors"
 	"io"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/iotaledger/hive.go/ierrors"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
 )
 
 var (
-	ErrLedgerUpdateTransactionAlreadyInProgress = errors.New("trying to begin a ledger update transaction with an already active transaction")
-	ErrLedgerUpdateInvalidOperation             = errors.New("trying to process a ledger update operation without active transaction")
-	ErrLedgerUpdateEndedAbruptly                = errors.New("ledger update transaction ended before receiving all operations")
+	ErrLedgerUpdateTransactionAlreadyInProgress = ierrors.New("trying to begin a ledger update transaction with an already active transaction")
+	ErrLedgerUpdateInvalidOperation             = ierrors.New("trying to process a ledger update operation without active transaction")
+	ErrLedgerUpdateEndedAbruptly                = ierrors.New("ledger update transaction ended before receiving all operations")
 )
 
 type LedgerUpdate struct {
@@ -38,7 +38,7 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint3
 	var update *LedgerUpdate
 	for {
 		payload, err := stream.Recv()
-		if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
+		if ierrors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 			break
 		}
 		if ctx.Err() != nil {

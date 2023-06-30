@@ -2,14 +2,13 @@ package nodebridge
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"io"
 	"sync"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/iotaledger/hive.go/ierrors"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/hive.go/runtime/valuenotifier"
 	inx "github.com/iotaledger/inx/go"
@@ -17,7 +16,7 @@ import (
 )
 
 // ErrAlreadyRegistered is returned when a callback for the same block ID has already been registered.
-var ErrAlreadyRegistered = errors.New("callback for block ID is already registered")
+var ErrAlreadyRegistered = ierrors.New("callback for block ID is already registered")
 
 type TangleListener struct {
 	nodeBridge                  *NodeBridge
@@ -77,7 +76,7 @@ func (t *TangleListener) registerBlockSolidCallback(blockID iotago.BlockID, f Bl
 	defer t.blockSolidCallbacksLock.Unlock()
 
 	if _, ok := t.blockSolidCallbacks[blockID]; ok {
-		return fmt.Errorf("%w: block %s", ErrAlreadyRegistered, blockID)
+		return ierrors.Wrapf(ErrAlreadyRegistered, "block %s", blockID)
 	}
 	t.blockSolidCallbacks[blockID] = f
 
@@ -180,7 +179,7 @@ func (t *TangleListener) listenToSolidBlocks(ctx context.Context, cancel context
 	for ctx.Err() == nil {
 		metadata, err := stream.Recv()
 		if err != nil {
-			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
+			if ierrors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 

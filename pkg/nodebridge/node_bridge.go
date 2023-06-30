@@ -2,8 +2,6 @@ package nodebridge
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -12,6 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/iotaledger/hive.go/ierrors"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/hive.go/runtime/options"
@@ -106,7 +105,7 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 	if n.targetNetworkName != "" {
 		// we need to check for the correct target network name
 		if n.targetNetworkName != protoParams.NetworkName {
-			return fmt.Errorf("network name mismatch, networkName: \"%s\", targetNetworkName: \"%s\"", protoParams.NetworkName, n.targetNetworkName)
+			return ierrors.Errorf("network name mismatch, networkName: \"%s\", targetNetworkName: \"%s\"", protoParams.NetworkName, n.targetNetworkName)
 		}
 	}
 
@@ -152,7 +151,7 @@ func (n *NodeBridge) Indexer(ctx context.Context) (nodeclient.IndexerClient, err
 	for ctx.Err() == nil {
 		indexer, err := getIndexerClient(ctx, nodeClient)
 		if err != nil {
-			if !errors.Is(err, nodeclient.ErrIndexerPluginNotAvailable) {
+			if !ierrors.Is(err, nodeclient.ErrIndexerPluginNotAvailable) {
 				return nil, err
 			}
 			time.Sleep(1 * time.Second)
@@ -187,7 +186,7 @@ func (n *NodeBridge) EventAPI(ctx context.Context) (*nodeclient.EventAPIClient, 
 	for ctx.Err() == nil {
 		eventAPIClient, err := getEventAPIClient(ctx, nodeClient)
 		if err != nil {
-			if !errors.Is(err, nodeclient.ErrMQTTPluginNotAvailable) {
+			if !ierrors.Is(err, nodeclient.ErrMQTTPluginNotAvailable) {
 				return nil, err
 			}
 			time.Sleep(1 * time.Second)

@@ -2,12 +2,12 @@ package nodebridge
 
 import (
 	"context"
-	"errors"
 	"io"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/iotaledger/hive.go/ierrors"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
 )
@@ -92,7 +92,7 @@ func (n *NodeBridge) CommitmentConeMetadata(ctx context.Context, cancel context.
 	for {
 		metadata, err := stream.Recv()
 		if err != nil {
-			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
+			if ierrors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 			n.LogErrorf("ReadCommitmentConeMetadata: %s", err.Error())

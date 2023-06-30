@@ -2,10 +2,10 @@ package nodebridge
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/iotaledger/hive.go/ierrors"
 	inx "github.com/iotaledger/inx/go"
 	"github.com/iotaledger/iota.go/v4/nodeclient"
 )
@@ -17,7 +17,7 @@ func (n *NodeBridge) INXNodeClient() (*nodeclient.Client, error) {
 func (n *NodeBridge) RegisterAPIRoute(ctx context.Context, route string, bindAddress string, path string) error {
 	bindAddressParts := strings.Split(bindAddress, ":")
 	if len(bindAddressParts) != 2 {
-		return fmt.Errorf("invalid address %s", bindAddress)
+		return ierrors.Errorf("invalid address %s", bindAddress)
 	}
 	port, err := strconv.ParseInt(bindAddressParts[1], 10, 32)
 	if err != nil {

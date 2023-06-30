@@ -2,13 +2,12 @@ package nodebridge
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"io"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/iotaledger/hive.go/ierrors"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
 )
@@ -45,7 +44,7 @@ func (n *NodeBridge) ProtocolParameters() *iotago.ProtocolParameters {
 
 func protocolParametersFromRaw(params *inx.RawProtocolParameters, api iotago.API) (*iotago.ProtocolParameters, error) {
 	if params.ProtocolVersion != supportedProtocolVersion {
-		return nil, fmt.Errorf("unsupported protocol version %d vs %d", params.ProtocolVersion, supportedProtocolVersion)
+		return nil, ierrors.Errorf("unsupported protocol version %d vs %d", params.ProtocolVersion, supportedProtocolVersion)
 	}
 
 	protoParams := &iotago.ProtocolParameters{}
@@ -67,7 +66,7 @@ func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.Canc
 	for {
 		nodeStatus, err := stream.Recv()
 		if err != nil {
-			if errors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
+			if ierrors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
 				break
 			}
 			n.LogErrorf("listenToNodeStatus: %s", err.Error())

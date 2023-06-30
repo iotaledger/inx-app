@@ -2,11 +2,9 @@ package pow
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
-
+	"github.com/iotaledger/hive.go/ierrors"
 	"github.com/iotaledger/hive.go/runtime/contextutils"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v4"
@@ -19,9 +17,9 @@ const (
 
 var (
 	// ErrOperationAborted is returned when the operation was aborted e.g. by a shutdown signal.
-	ErrOperationAborted = errors.New("operation was aborted")
+	ErrOperationAborted = ierrors.New("operation was aborted")
 	// ErrParentsNotGiven is returned when no block parents and no refreshTipsFunc were given.
-	ErrParentsNotGiven = errors.New("no parents given")
+	ErrParentsNotGiven = ierrors.New("no parents given")
 )
 
 // RefreshTipsFunc refreshes tips of the block if PoW takes longer than a configured duration.
@@ -58,7 +56,7 @@ func DoPoW(ctx context.Context, block *iotago.Block, _ serializer.DeSerializatio
 	getPoWData := func(block *iotago.Block) (powData []byte, err error) {
 		blockData, err := api.Encode(block)
 		if err != nil {
-			return nil, fmt.Errorf("unable to perform PoW as block can't be serialized: %w", err)
+			return nil, ierrors.Errorf("unable to perform PoW as block can't be serialized: %w", err)
 		}
 
 		return blockData[:len(blockData)-nonceBytes], nil
@@ -81,7 +79,7 @@ func DoPoW(ctx context.Context, block *iotago.Block, _ serializer.DeSerializatio
 
 		nonce, err := pow.New(parallelism).Mine(powCtx, powData, float64(protoParams.MinPoWScore))
 		if err != nil {
-			if errors.Is(err, pow.ErrCancelled) && refreshTipsFunc != nil {
+			if ierrors.Is(err, pow.ErrCancelled) && refreshTipsFunc != nil {
 				// context was canceled and tips can be refreshed
 				tips, err := refreshTipsFunc()
 				if err != nil {
@@ -112,7 +110,7 @@ func DoPoW(ctx context.Context, block *iotago.Block, _ serializer.DeSerializatio
 				return 0, ErrOperationAborted
 			}
 
-			if errors.Is(err, pow.ErrCancelled) {
+			if ierrors.Is(err, pow.ErrCancelled) {
 				// redo the PoW with new tips
 				continue
 			}

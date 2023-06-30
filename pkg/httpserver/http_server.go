@@ -12,8 +12,8 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/pkg/errors"
 
+	"github.com/iotaledger/hive.go/ierrors"
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v4"
 	"github.com/iotaledger/iota.go/v4/hexutil"
@@ -57,7 +57,7 @@ func errorHandler() func(error, echo.Context) {
 		var message string
 
 		var e *echo.HTTPError
-		if errors.As(err, &e) {
+		if ierrors.As(err, &e) {
 			statusCode = e.Code
 			message = fmt.Sprintf("%s, error: %s", e.Message, err)
 		} else {
@@ -145,17 +145,17 @@ func ParseBoolQueryParam(c echo.Context, paramName string) (bool, error) {
 func ParseUint32QueryParam(c echo.Context, paramName string, maxValue ...uint32) (uint32, error) {
 	intString := strings.ToLower(c.QueryParam(paramName))
 	if intString == "" {
-		return 0, errors.WithMessagef(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
 	}
 
 	value, err := strconv.ParseUint(intString, 10, 32)
 	if err != nil {
-		return 0, errors.WithMessagef(ErrInvalidParameter, "invalid value: %s, error: %s", intString, err)
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", intString, err)
 	}
 
 	if len(maxValue) > 0 {
 		if uint32(value) > maxValue[0] {
-			return 0, errors.WithMessagef(ErrInvalidParameter, "invalid value: %s, higher than the max number %d", intString, maxValue)
+			return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, higher than the max number %d", intString, maxValue)
 		}
 	}
 
@@ -167,10 +167,10 @@ func ParseHexQueryParam(c echo.Context, paramName string, maxLen int) ([]byte, e
 
 	paramBytes, err := hexutil.DecodeHex(param)
 	if err != nil {
-		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid param: %s, error: %s", paramName, err)
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid param: %s, error: %w", paramName, err)
 	}
 	if len(paramBytes) > maxLen {
-		return nil, errors.WithMessage(ErrInvalidParameter, fmt.Sprintf("query parameter %s too long, max. %d bytes but is %d", paramName, maxLen, len(paramBytes)))
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "query parameter %s too long, max. %d bytes but is %d", paramName, maxLen, len(paramBytes))
 	}
 
 	return paramBytes, nil
@@ -190,11 +190,11 @@ func ParseBech32AddressQueryParam(c echo.Context, prefix iotago.NetworkPrefix, p
 
 	hrp, bech32Address, err := iotago.ParseBech32(addressParam)
 	if err != nil {
-		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid address: %s, error: %s", addressParam, err)
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid address: %s, error: %w", addressParam, err)
 	}
 
 	if hrp != prefix {
-		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid bech32 address, expected prefix: %s", prefix)
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid bech32 address, expected prefix: %s", prefix)
 	}
 
 	return bech32Address, nil
@@ -205,7 +205,7 @@ func ParseCommitmentIDParam(c echo.Context, paramName string) (iotago.Commitment
 
 	commitmentIDs, err := iotago.BlockIDsFromHexString([]string{commitmentIDHex})
 	if err != nil {
-		return iotago.EmptyBlockID(), errors.WithMessagef(ErrInvalidParameter, "invalid commitment ID: %s, error: %s", commitmentIDHex, err)
+		return iotago.EmptyBlockID(), ierrors.Wrapf(ErrInvalidParameter, "invalid commitment ID: %s, error: %w", commitmentIDHex, err)
 	}
 
 	return commitmentIDs[0], nil
@@ -216,7 +216,7 @@ func ParseBlockIDParam(c echo.Context, paramName string) (iotago.BlockID, error)
 
 	blockIDs, err := iotago.BlockIDsFromHexString([]string{blockIDHex})
 	if err != nil {
-		return iotago.EmptyBlockID(), errors.WithMessagef(ErrInvalidParameter, "invalid block ID: %s, error: %s", blockIDHex, err)
+		return iotago.EmptyBlockID(), ierrors.Wrapf(ErrInvalidParameter, "invalid block ID: %s, error: %w", blockIDHex, err)
 	}
 
 	return blockIDs[0], nil
@@ -228,11 +228,11 @@ func ParseTransactionIDParam(c echo.Context, paramName string) (iotago.Transacti
 
 	transactionIDBytes, err := hexutil.DecodeHex(transactionIDHex)
 	if err != nil {
-		return transactionID, errors.WithMessagef(ErrInvalidParameter, "invalid transaction ID: %s, error: %s", transactionIDHex, err)
+		return transactionID, ierrors.Wrapf(ErrInvalidParameter, "invalid transaction ID: %s, error: %w", transactionIDHex, err)
 	}
 
 	if len(transactionIDBytes) != iotago.TransactionIDLength {
-		return transactionID, errors.WithMessagef(ErrInvalidParameter, "invalid transaction ID: %s, invalid length: %d", transactionIDHex, len(transactionIDBytes))
+		return transactionID, ierrors.Wrapf(ErrInvalidParameter, "invalid transaction ID: %s, invalid length: %d", transactionIDHex, len(transactionIDBytes))
 	}
 
 	copy(transactionID[:], transactionIDBytes)
@@ -245,22 +245,22 @@ func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, erro
 
 	outputID, err := iotago.OutputIDFromHex(outputIDParam)
 	if err != nil {
-		return iotago.OutputID{}, errors.WithMessagef(ErrInvalidParameter, "invalid output ID: %s, error: %s", outputIDParam, err)
+		return iotago.OutputID{}, ierrors.Wrapf(ErrInvalidParameter, "invalid output ID: %s, error: %w", outputIDParam, err)
 	}
 
 	return outputID, nil
 }
 
-func ParseAliasIDParam(c echo.Context, paramName string) (*iotago.AccountID, error) {
-	aliasIDParam := strings.ToLower(c.Param(paramName))
+func ParseAccountIDParam(c echo.Context, paramName string) (*iotago.AccountID, error) {
+	accountIDParam := strings.ToLower(c.Param(paramName))
 
-	accountIDBytes, err := hexutil.DecodeHex(aliasIDParam)
+	accountIDBytes, err := hexutil.DecodeHex(accountIDParam)
 	if err != nil {
-		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid alias ID: %s, error: %s", aliasIDParam, err)
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid account ID: %s, error: %w", accountIDParam, err)
 	}
 
 	if len(accountIDBytes) != iotago.AccountIDLength {
-		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid alias ID: %s, error: %s", aliasIDParam, err)
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid account ID: %s, error: %w", accountIDParam, err)
 	}
 
 	var accountID iotago.AccountID
@@ -274,11 +274,11 @@ func ParseNFTIDParam(c echo.Context, paramName string) (*iotago.NFTID, error) {
 
 	nftIDBytes, err := hexutil.DecodeHex(nftIDParam)
 	if err != nil {
-		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid NFT ID: %s, error: %s", nftIDParam, err)
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid NFT ID: %s, error: %w", nftIDParam, err)
 	}
 
 	if len(nftIDBytes) != iotago.NFTIDLength {
-		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid NFT ID: %s, error: %s", nftIDParam, err)
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid NFT ID: %s, error: %w", nftIDParam, err)
 	}
 
 	var nftID iotago.NFTID
@@ -292,11 +292,11 @@ func ParseFoundryIDParam(c echo.Context, paramName string) (*iotago.FoundryID, e
 
 	foundryIDBytes, err := hexutil.DecodeHex(foundryIDParam)
 	if err != nil {
-		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid foundry ID: %s, error: %s", foundryIDParam, err)
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid foundry ID: %s, error: %w", foundryIDParam, err)
 	}
 
 	if len(foundryIDBytes) != iotago.FoundryIDLength {
-		return nil, errors.WithMessagef(ErrInvalidParameter, "invalid foundry ID: %s, error: %s", foundryIDParam, err)
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid foundry ID: %s, error: %w", foundryIDParam, err)
 	}
 
 	var foundryID iotago.FoundryID
@@ -308,17 +308,17 @@ func ParseFoundryIDParam(c echo.Context, paramName string) (*iotago.FoundryID, e
 func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uint64, error) {
 	intString := strings.ToLower(c.Param(paramName))
 	if intString == "" {
-		return 0, errors.WithMessagef(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
 	}
 
 	value, err := strconv.ParseUint(intString, 10, 64)
 	if err != nil {
-		return 0, errors.WithMessagef(ErrInvalidParameter, "invalid value: %s, error: %s", intString, err)
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", intString, err)
 	}
 
 	if len(maxValue) > 0 {
 		if value > maxValue[0] {
-			return 0, errors.WithMessagef(ErrInvalidParameter, "invalid value: %s, higher than the max number %d", intString, maxValue)
+			return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, higher than the max number %d", intString, maxValue)
 		}
 	}
 
