@@ -162,6 +162,21 @@ func ParseUint32QueryParam(c echo.Context, paramName string, maxValue ...uint32)
 	return uint32(value), nil
 }
 
+func ParseSlotQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, error) {
+	param := c.QueryParam(paramName)
+
+	if param == "" {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+	}
+
+	value, err := strconv.ParseUint(param, 10, 64)
+	if err != nil {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %s", param, err)
+	}
+
+	return iotago.SlotIndex(value), nil
+}
+
 func ParseHexQueryParam(c echo.Context, paramName string, maxLen int) ([]byte, error) {
 	param := c.QueryParam(paramName)
 
@@ -251,22 +266,22 @@ func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, erro
 	return outputID, nil
 }
 
-func ParseAccountIDParam(c echo.Context, paramName string) (*iotago.AccountID, error) {
+func ParseAccountIDParam(c echo.Context, paramName string) (iotago.AccountID, error) {
 	accountIDParam := strings.ToLower(c.Param(paramName))
 
 	accountIDBytes, err := hexutil.DecodeHex(accountIDParam)
 	if err != nil {
-		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid account ID: %s, error: %w", accountIDParam, err)
+		return iotago.AccountID{}, ierrors.Wrapf(ErrInvalidParameter, "invalid account ID: %s, error: %w", accountIDParam, err)
 	}
 
 	if len(accountIDBytes) != iotago.AccountIDLength {
-		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid account ID: %s, error: %w", accountIDParam, err)
+		return iotago.AccountID{}, ierrors.Wrapf(ErrInvalidParameter, "invalid account ID: %s, error: %w", accountIDParam, err)
 	}
 
 	var accountID iotago.AccountID
 	copy(accountID[:], accountIDBytes)
 
-	return &accountID, nil
+	return iotago.AccountID{}, nil
 }
 
 func ParseNFTIDParam(c echo.Context, paramName string) (*iotago.NFTID, error) {
