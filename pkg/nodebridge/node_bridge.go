@@ -19,10 +19,6 @@ import (
 	"github.com/iotaledger/iota.go/v4/nodeclient"
 )
 
-const (
-	supportedProtocolVersion = 2
-)
-
 type NodeBridge struct {
 	// the logger used to log events.
 	*logger.WrappedLogger
@@ -31,17 +27,17 @@ type NodeBridge struct {
 	targetNetworkName string
 	Events            *Events
 
-	conn               *grpc.ClientConn
-	client             inx.INXClient
-	NodeConfig         *inx.NodeConfiguration
-	nodeStatusMutex    sync.RWMutex
-	nodeStatus         *inx.NodeStatus
-	protocolParameters *iotago.ProtocolParameters
+	conn       *grpc.ClientConn
+	client     inx.INXClient
+	NodeConfig *inx.NodeConfiguration
+
+	nodeStatusMutex sync.RWMutex
+	nodeStatus      *inx.NodeStatus
 }
 
 type Events struct {
 	LatestCommittedSlotChanged *event.Event1[*Commitment]
-	ConfirmedSlotChanged       *event.Event1[*Commitment]
+	LatestFinalizedSlotChanged *event.Event1[iotago.SlotIndex]
 }
 
 // WithTargetNetworkName checks if the network name of the node is equal to the given targetNetworkName.
@@ -58,7 +54,7 @@ func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *Node
 		targetNetworkName: "",
 		Events: &Events{
 			LatestCommittedSlotChanged: event.New1[*Commitment](),
-			ConfirmedSlotChanged:       event.New1[*Commitment](),
+			LatestFinalizedSlotChanged: event.New1[iotago.SlotIndex](),
 		},
 	}, opts)
 }
@@ -87,27 +83,29 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 	}
 	n.NodeConfig = nodeConfig
 
+	//protoParams, err := lo.DropCount(iotago.ProtocolParametersFromBytes(params.GetParams()))
+	//if err != nil {
+	//	return err
+	//}
+	//n.protocolParameters = protoParams
+	//
+	//n.api = iotago.V3API(n.protocolParameters)
+
+	// TODO: fix when the protocol parameters PR is merged
+
+	//if n.targetNetworkName != "" {
+	//	// we need to check for the correct target network name
+	//	if n.targetNetworkName != protoParams.NetworkName {
+	//		return ierrors.Errorf("network name mismatch, networkName: \"%s\", targetNetworkName: \"%s\"", protoParams.NetworkName, n.targetNetworkName)
+	//	}
+	//}
+
 	n.LogInfo("Reading node status ...")
 	nodeStatus, err := n.client.ReadNodeStatus(ctx, &inx.NoParams{})
 	if err != nil {
 		return err
 	}
 	n.nodeStatus = nodeStatus
-
-	protoParams, err := protocolParametersFromRaw(nodeStatus.GetCurrentProtocolParameters(), n.api)
-	if err != nil {
-		return err
-	}
-	n.protocolParameters = protoParams
-
-	n.api = iotago.V3API(n.protocolParameters)
-
-	if n.targetNetworkName != "" {
-		// we need to check for the correct target network name
-		if n.targetNetworkName != protoParams.NetworkName {
-			return ierrors.Errorf("network name mismatch, networkName: \"%s\", targetNetworkName: \"%s\"", protoParams.NetworkName, n.targetNetworkName)
-		}
-	}
 
 	return nil
 }
@@ -123,7 +121,7 @@ func (n *NodeBridge) Run(ctx context.Context) {
 	}()
 
 	<-c.Done()
-	n.conn.Close()
+	_ = n.conn.Close()
 }
 
 func (n *NodeBridge) Client() inx.INXClient {

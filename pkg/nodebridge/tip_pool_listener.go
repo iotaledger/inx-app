@@ -1,4 +1,6 @@
+/*
 package nodebridge
+
 
 import (
 	"context"
@@ -83,3 +85,4 @@ func (t *TipPoolListener) GetTipsPoolSizes() (uint32, uint32) {
 
 	return t.nonLazyPoolSize, t.semiLazyPoolSize
 }
+*/

@@ -1,3 +1,4 @@
+/*
 package nodebridge
 
 import (
@@ -160,7 +161,7 @@ func (t *TangleListener) Run(ctx context.Context) {
 		}
 	}()
 
-	hook := t.nodeBridge.Events.ConfirmedSlotChanged.Hook(func(c *Commitment) {
+	hook := t.nodeBridge.Events.LatestFinalizedSlotChanged.Hook(func(c *Commitment) {
 		t.commitmentConfirmedNotifier.Notify(uint32(c.Commitment.Index))
 	})
 	defer hook.Unhook()
@@ -193,3 +194,4 @@ func (t *TangleListener) listenToSolidBlocks(ctx context.Context, cancel context
 
 	return nil
 }
+*/
