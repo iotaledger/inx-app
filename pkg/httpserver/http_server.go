@@ -177,6 +177,21 @@ func ParseSlotQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, er
 	return iotago.SlotIndex(value), nil
 }
 
+func ParseEpochQueryParam(c echo.Context, paramName string) (iotago.EpochIndex, error) {
+	param := c.QueryParam(paramName)
+
+	if param == "" {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+	}
+
+	value, err := strconv.ParseUint(param, 10, 64)
+	if err != nil {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %s", param, err)
+	}
+
+	return iotago.EpochIndex(value), nil
+}
+
 func ParseHexQueryParam(c echo.Context, paramName string, maxLen int) ([]byte, error) {
 	param := c.QueryParam(paramName)
 
