@@ -8,13 +8,16 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/iotaledger/hive.go/app v0.0.0-20230630092834-5ab21b6bf7dd
 	github.com/iotaledger/hive.go/ierrors v0.0.0-20230630092834-5ab21b6bf7dd
+	github.com/iotaledger/hive.go/lo v0.0.0-20230630092834-5ab21b6bf7dd
 	github.com/iotaledger/hive.go/logger v0.0.0-20230630092834-5ab21b6bf7dd
 	github.com/iotaledger/hive.go/runtime v0.0.0-20230630092834-5ab21b6bf7dd
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20230630092834-5ab21b6bf7dd
+	github.com/iotaledger/hive.go/stringify v0.0.0-20230630092834-5ab21b6bf7dd
 	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20230630102936-4d983bd3794a
 	github.com/iotaledger/iota.go/v4 v4.0.0-20230630100527-d578796f992a
 	github.com/labstack/echo/v4 v4.10.2
 	go.uber.org/dig v1.17.0
+	golang.org/x/exp v0.0.0-20230206171751-46f607a40771
 	google.golang.org/grpc v1.56.1
 )
 
@@ -39,8 +42,6 @@ require (
 	github.com/iotaledger/hive.go/constraints v0.0.0-20230630092834-5ab21b6bf7dd // indirect
 	github.com/iotaledger/hive.go/crypto v0.0.0-20230630092834-5ab21b6bf7dd // indirect
 	github.com/iotaledger/hive.go/ds v0.0.0-20230630092834-5ab21b6bf7dd // indirect
-	github.com/iotaledger/hive.go/lo v0.0.0-20230630092834-5ab21b6bf7dd // indirect
-	github.com/iotaledger/hive.go/stringify v0.0.0-20230630092834-5ab21b6bf7dd // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
 	github.com/knadh/koanf v1.5.0 // indirect
 	github.com/kr/text v0.2.0 // indirect

@@ -1,5 +1,6 @@
-/*
 package nodebridge
+
+/*
 
 import (
 	"context"
