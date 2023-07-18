@@ -11,7 +11,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/iotaledger/hive.go/ierrors"
-	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/hive.go/runtime/options"
@@ -88,11 +87,12 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 
 	n.apiProvider = api.NewDynamicMockAPIProvider()
 	for _, rawParams := range n.NodeConfig.ProtocolParameters {
-		protoParams, err := lo.DropCount(iotago.ProtocolParametersFromBytes(rawParams.GetParams()))
+		startEpoch, protoParams, err := rawParams.Unwrap()
 		if err != nil {
 			return err
 		}
-		n.apiProvider.AddProtocolParameters(iotago.EpochIndex(rawParams.GetStartEpoch()), protoParams)
+
+		n.apiProvider.AddProtocolParameters(startEpoch, protoParams)
 	}
 
 	if n.targetNetworkName != "" {
