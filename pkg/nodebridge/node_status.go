@@ -35,24 +35,13 @@ func (n *NodeBridge) IsNodeAlmostSynced() bool {
 	return n.NodeStatus().GetIsAlmostSynced()
 }
 
-func (n *NodeBridge) ProtocolParameters() *iotago.ProtocolParameters {
-	n.nodeStatusMutex.RLock()
-	defer n.nodeStatusMutex.RUnlock()
-
-	return n.protocolParameters
+func (n *NodeBridge) LatestCommitment() (*iotago.Commitment, error) {
+	//TODO: use the api for the correct version
+	return n.NodeStatus().GetLatestCommitment().UnwrapCommitment(n.api)
 }
 
-func protocolParametersFromRaw(params *inx.RawProtocolParameters, api iotago.API) (*iotago.ProtocolParameters, error) {
-	if params.ProtocolVersion != supportedProtocolVersion {
-		return nil, ierrors.Errorf("unsupported protocol version %d vs %d", params.ProtocolVersion, supportedProtocolVersion)
-	}
-
-	protoParams := &iotago.ProtocolParameters{}
-	if _, err := api.Decode(params.GetParams(), &protoParams); err != nil {
-		return nil, err
-	}
-
-	return protoParams, nil
+func (n *NodeBridge) LatestFinalizedSlot() iotago.SlotIndex {
+	return iotago.SlotIndex(n.NodeStatus().GetLatestFinalizedSlot())
 }
 
 func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.CancelFunc) error {
@@ -88,26 +77,19 @@ func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.Canc
 }
 
 func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
-
-	var latestCommittedSlotChanged bool
-	var confirmedCommitmentChanged bool
+	var latestCommitmentChanged bool
+	var latestFinalizedSlotChanged bool
 
 	updateStatus := func() error {
 		n.nodeStatusMutex.Lock()
 		defer n.nodeStatusMutex.Unlock()
-		if nodeStatus.GetLatestCommitment().GetCommitmentInfo().GetCommitmentIndex() > n.nodeStatus.GetLatestCommitment().GetCommitmentInfo().GetCommitmentIndex() {
-			latestCommittedSlotChanged = true
+		if nodeStatus.GetLatestCommitment().GetCommitmentId().Unwrap().Index() > n.nodeStatus.GetLatestCommitment().GetCommitmentId().Unwrap().Index() {
+			latestCommitmentChanged = true
 		}
-		if nodeStatus.GetConfirmedCommitment().GetCommitmentInfo().GetCommitmentIndex() > n.nodeStatus.GetConfirmedCommitment().GetCommitmentInfo().GetCommitmentIndex() {
-			confirmedCommitmentChanged = true
+		if nodeStatus.GetLatestFinalizedSlot() > n.nodeStatus.GetLatestFinalizedSlot() {
+			latestFinalizedSlotChanged = true
 		}
 		n.nodeStatus = nodeStatus
-
-		protocolParams, err := protocolParametersFromRaw(nodeStatus.GetCurrentProtocolParameters(), n.api)
-		if err != nil {
-			return err
-		}
-		n.protocolParameters = protocolParams
 
 		return nil
 	}
@@ -116,18 +98,16 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 		return err
 	}
 
-	if latestCommittedSlotChanged {
+	if latestCommitmentChanged {
+		//TODO: use the api for the correct version
 		commitment, err := commitmentFromINXCommitment(nodeStatus.GetLatestCommitment(), n.api)
 		if err == nil {
 			n.Events.LatestCommittedSlotChanged.Trigger(commitment)
 		}
 	}
 
-	if confirmedCommitmentChanged {
-		commitment, err := commitmentFromINXCommitment(nodeStatus.GetConfirmedCommitment(), n.api)
-		if err == nil {
-			n.Events.ConfirmedSlotChanged.Trigger(commitment)
-		}
+	if latestFinalizedSlotChanged {
+		n.Events.LatestFinalizedSlotChanged.Trigger(iotago.SlotIndex(nodeStatus.GetLatestFinalizedSlot()))
 	}
 
 	return nil

@@ -1,5 +1,7 @@
 package nodebridge
 
+/*
+
 import (
 	"context"
 
@@ -15,3 +17,4 @@ func (n *NodeBridge) RequestTips(ctx context.Context, count uint32, allowSemiLaz
 
 	return tipsResponse.UnwrapTips(), nil
 }
+*/

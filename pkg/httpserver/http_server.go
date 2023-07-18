@@ -286,11 +286,11 @@ func ParseAccountIDParam(c echo.Context, paramName string) (iotago.AccountID, er
 
 	accountIDBytes, err := hexutil.DecodeHex(accountIDParam)
 	if err != nil {
-		return iotago.AccountID{}, ierrors.Wrapf(ErrInvalidParameter, "invalid account ID: %s, error: %w", accountIDParam, err)
+		return iotago.AccountID{}, ierrors.Wrapf(ErrInvalidParameter, "invalid accountID: %s, error: %w", accountIDParam, err)
 	}
 
 	if len(accountIDBytes) != iotago.AccountIDLength {
-		return iotago.AccountID{}, ierrors.Wrapf(ErrInvalidParameter, "invalid account ID: %s, error: %w", accountIDParam, err)
+		return iotago.AccountID{}, ierrors.Wrapf(ErrInvalidParameter, "invalid accountID: %s, error: %w", accountIDParam, err)
 	}
 
 	var accountID iotago.AccountID

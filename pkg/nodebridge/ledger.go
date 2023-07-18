@@ -24,10 +24,10 @@ type LedgerUpdate struct {
 	Created   []*inx.LedgerOutput
 }
 
-func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint32, endIndex uint32, consume func(update *LedgerUpdate) error) error {
-	req := &inx.CommitmentRangeRequest{
-		StartSlotIndex: startIndex,
-		EndSlotIndex:   endIndex,
+func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex iotago.SlotIndex, endIndex iotago.SlotIndex, consume func(update *LedgerUpdate) error) error {
+	req := &inx.SlotRangeRequest{
+		StartSlot: uint64(startIndex),
+		EndSlot:   uint64(endIndex),
 	}
 
 	stream, err := n.client.ListenToLedgerUpdates(ctx, req)
@@ -57,25 +57,25 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex uint3
 
 			//nolint:nosnakecase // grpc uses underscores
 			case inx.LedgerUpdate_Marker_BEGIN:
-				n.LogDebugf("BEGIN batch: %d consumed: %d, created: %d", op.BatchMarker.GetMilestoneIndex(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
+				n.LogDebugf("BEGIN batch: %d consumed: %d, created: %d", op.BatchMarker.GetSlot(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
 				if update != nil {
 					return ErrLedgerUpdateTransactionAlreadyInProgress
 				}
 				update = &LedgerUpdate{
-					SlotIndex: iotago.SlotIndex(op.BatchMarker.GetMilestoneIndex()),
+					SlotIndex: iotago.SlotIndex(op.BatchMarker.GetSlot()),
 					Consumed:  make([]*inx.LedgerSpent, 0),
 					Created:   make([]*inx.LedgerOutput, 0),
 				}
 
 			//nolint:nosnakecase // grpc uses underscores
 			case inx.LedgerUpdate_Marker_END:
-				n.LogDebugf("END batch: %d consumed: %d, created: %d", op.BatchMarker.GetMilestoneIndex(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
+				n.LogDebugf("END batch: %d consumed: %d, created: %d", op.BatchMarker.GetSlot(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
 				if update == nil {
 					return ErrLedgerUpdateInvalidOperation
 				}
 				if uint32(len(update.Consumed)) != op.BatchMarker.GetConsumedCount() ||
 					uint32(len(update.Created)) != op.BatchMarker.GetCreatedCount() ||
-					update.SlotIndex != iotago.SlotIndex(op.BatchMarker.MilestoneIndex) {
+					update.SlotIndex != iotago.SlotIndex(op.BatchMarker.GetSlot()) {
 					return ErrLedgerUpdateEndedAbruptly
 				}
 
