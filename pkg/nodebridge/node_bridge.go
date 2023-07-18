@@ -11,9 +11,11 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/iotaledger/hive.go/ierrors"
+	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/hive.go/runtime/options"
+	"github.com/iotaledger/inx-app/pkg/api"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
 	"github.com/iotaledger/iota.go/v4/nodeclient"
@@ -27,9 +29,10 @@ type NodeBridge struct {
 	targetNetworkName string
 	Events            *Events
 
-	conn       *grpc.ClientConn
-	client     inx.INXClient
-	NodeConfig *inx.NodeConfiguration
+	conn        *grpc.ClientConn
+	client      inx.INXClient
+	NodeConfig  *inx.NodeConfiguration
+	apiProvider *api.DynamicMockAPIProvider
 
 	nodeStatusMutex sync.RWMutex
 	nodeStatus      *inx.NodeStatus
@@ -83,22 +86,21 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 	}
 	n.NodeConfig = nodeConfig
 
-	//protoParams, err := lo.DropCount(iotago.ProtocolParametersFromBytes(params.GetParams()))
-	//if err != nil {
-	//	return err
-	//}
-	//n.protocolParameters = protoParams
-	//
-	//n.api = iotago.V3API(n.protocolParameters)
+	n.apiProvider = api.NewDynamicMockAPIProvider()
+	for _, rawParams := range n.NodeConfig.ProtocolParameters {
+		protoParams, err := lo.DropCount(iotago.ProtocolParametersFromBytes(rawParams.GetParams()))
+		if err != nil {
+			return err
+		}
+		n.apiProvider.AddProtocolParameters(iotago.EpochIndex(rawParams.GetStartEpoch()), protoParams)
+	}
 
-	// TODO: fix when the protocol parameters PR is merged
-
-	//if n.targetNetworkName != "" {
-	//	// we need to check for the correct target network name
-	//	if n.targetNetworkName != protoParams.NetworkName {
-	//		return ierrors.Errorf("network name mismatch, networkName: \"%s\", targetNetworkName: \"%s\"", protoParams.NetworkName, n.targetNetworkName)
-	//	}
-	//}
+	if n.targetNetworkName != "" {
+		// we need to check for the correct target network name
+		if n.targetNetworkName != n.APIProvider().CurrentAPI().ProtocolParameters().NetworkName() {
+			return ierrors.Errorf("network name mismatch, networkName: \"%s\", targetNetworkName: \"%s\"", n.APIProvider().CurrentAPI().ProtocolParameters().NetworkName(), n.targetNetworkName)
+		}
+	}
 
 	n.LogInfo("Reading node status ...")
 	nodeStatus, err := n.client.ReadNodeStatus(ctx, &inx.NoParams{})
@@ -126,6 +128,10 @@ func (n *NodeBridge) Run(ctx context.Context) {
 
 func (n *NodeBridge) Client() inx.INXClient {
 	return n.client
+}
+
+func (n *NodeBridge) APIProvider() api.Provider {
+	return n.apiProvider
 }
 
 // Indexer returns the IndexerClient.
