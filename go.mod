@@ -7,18 +7,18 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/iotaledger/hive.go/app v0.0.0-20230630092834-5ab21b6bf7dd
-	github.com/iotaledger/hive.go/ierrors v0.0.0-20230630092834-5ab21b6bf7dd
-	github.com/iotaledger/hive.go/lo v0.0.0-20230630092834-5ab21b6bf7dd
+	github.com/iotaledger/hive.go/ierrors v0.0.0-20230706083020-ef6c3248369d
+	github.com/iotaledger/hive.go/lo v0.0.0-20230706083020-ef6c3248369d
 	github.com/iotaledger/hive.go/logger v0.0.0-20230630092834-5ab21b6bf7dd
-	github.com/iotaledger/hive.go/runtime v0.0.0-20230630092834-5ab21b6bf7dd
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20230630092834-5ab21b6bf7dd
-	github.com/iotaledger/hive.go/stringify v0.0.0-20230630092834-5ab21b6bf7dd
-	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20230630102936-4d983bd3794a
-	github.com/iotaledger/iota.go/v4 v4.0.0-20230630100527-d578796f992a
+	github.com/iotaledger/hive.go/runtime v0.0.0-20230706083020-ef6c3248369d
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20230706083020-ef6c3248369d
+	github.com/iotaledger/hive.go/stringify v0.0.0-20230630101126-a9b43f69f1f0
+	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20230718114816-5207ca439d2a
+	github.com/iotaledger/iota.go/v4 v4.0.0-20230720082722-b4589df61bea
 	github.com/labstack/echo/v4 v4.10.2
 	go.uber.org/dig v1.17.0
 	golang.org/x/exp v0.0.0-20230206171751-46f607a40771
-	google.golang.org/grpc v1.56.1
+	google.golang.org/grpc v1.56.2
 )
 
 require (
@@ -27,7 +27,7 @@ require (
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
-	github.com/eclipse/paho.mqtt.golang v1.4.2 // indirect
+	github.com/eclipse/paho.mqtt.golang v1.4.3 // indirect
 	github.com/ethereum/go-ethereum v1.12.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
@@ -37,12 +37,11 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
-	github.com/holiman/uint256 v1.2.2 // indirect
-	github.com/iancoleman/orderedmap v0.2.0 // indirect
-	github.com/iotaledger/hive.go/constraints v0.0.0-20230630092834-5ab21b6bf7dd // indirect
-	github.com/iotaledger/hive.go/crypto v0.0.0-20230630092834-5ab21b6bf7dd // indirect
-	github.com/iotaledger/hive.go/ds v0.0.0-20230630092834-5ab21b6bf7dd // indirect
-	github.com/iotaledger/iota.go v1.0.0 // indirect
+	github.com/holiman/uint256 v1.2.3 // indirect
+	github.com/iancoleman/orderedmap v0.3.0 // indirect
+	github.com/iotaledger/hive.go/constraints v0.0.0-20230705073627-cfe175cea4a6 // indirect
+	github.com/iotaledger/hive.go/crypto v0.0.0-20230706083020-ef6c3248369d // indirect
+	github.com/iotaledger/hive.go/ds v0.0.0-20230630101126-a9b43f69f1f0 // indirect
 	github.com/knadh/koanf v1.5.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/labstack/gommon v0.4.0 // indirect
@@ -56,7 +55,6 @@ require (
 	github.com/pasztorpisti/qs v0.0.0-20171216220353-8d6c33ee906c // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/petermattis/goid v0.0.0-20230518223814-80aa455d8761 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.16.0 // indirect
 	github.com/prometheus/client_model v0.4.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
@@ -70,13 +68,13 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/crypto v0.10.0 // indirect
-	golang.org/x/net v0.11.0 // indirect
+	golang.org/x/crypto v0.11.0 // indirect
+	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
-	golang.org/x/text v0.10.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230629202037-9506855d4529 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230717213848-3f92550aa753 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
