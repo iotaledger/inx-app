@@ -299,40 +299,40 @@ func ParseAccountIDParam(c echo.Context, paramName string) (iotago.AccountID, er
 	return accountID, nil
 }
 
-func ParseNFTIDParam(c echo.Context, paramName string) (*iotago.NFTID, error) {
-	nftIDParam := strings.ToLower(c.Param(paramName))
+func ParseNFTIDParam(c echo.Context, paramName string) (iotago.NFTID, error) {
+	nftID := iotago.NFTID{}
+	nftIDHex := strings.ToLower(c.Param(paramName))
 
-	nftIDBytes, err := hexutil.DecodeHex(nftIDParam)
+	nftIDBytes, err := hexutil.DecodeHex(nftIDHex)
 	if err != nil {
-		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid NFT ID: %s, error: %w", nftIDParam, err)
+		return nftID, ierrors.Wrapf(ErrInvalidParameter, "invalid NFT ID: %s, error: %w", nftIDHex, err)
 	}
 
 	if len(nftIDBytes) != iotago.NFTIDLength {
-		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid NFT ID: %s, error: %w", nftIDParam, err)
+		return nftID, ierrors.Wrapf(ErrInvalidParameter, "invalid nftID: %s, invalid length: %d", nftIDHex, len(nftIDBytes))
 	}
 
-	var nftID iotago.NFTID
 	copy(nftID[:], nftIDBytes)
 
-	return &nftID, nil
+	return nftID, nil
 }
 
-func ParseFoundryIDParam(c echo.Context, paramName string) (*iotago.FoundryID, error) {
-	foundryIDParam := strings.ToLower(c.Param(paramName))
+func ParseFoundryIDParam(c echo.Context, paramName string) (iotago.FoundryID, error) {
+	foundryID := iotago.FoundryID{}
+	foundryIDHex := strings.ToLower(c.Param(paramName))
 
-	foundryIDBytes, err := hexutil.DecodeHex(foundryIDParam)
+	foundryIDBytes, err := hexutil.DecodeHex(foundryIDHex)
 	if err != nil {
-		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid foundry ID: %s, error: %w", foundryIDParam, err)
+		return foundryID, ierrors.Wrapf(ErrInvalidParameter, "invalid foundry ID: %s, error: %w", foundryIDHex, err)
 	}
 
 	if len(foundryIDBytes) != iotago.FoundryIDLength {
-		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid foundry ID: %s, error: %w", foundryIDParam, err)
+		return foundryID, ierrors.Wrapf(ErrInvalidParameter, "invalid foundryID: %s, invalid length: %d", foundryIDHex, len(foundryIDBytes))
 	}
 
-	var foundryID iotago.FoundryID
 	copy(foundryID[:], foundryIDBytes)
 
-	return &foundryID, nil
+	return foundryID, nil
 }
 
 func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uint64, error) {
