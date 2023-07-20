@@ -355,6 +355,36 @@ func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uin
 	return value, nil
 }
 
+func ParseSlotParam(c echo.Context, paramName string) (iotago.SlotIndex, error) {
+	param := c.Param(paramName)
+
+	if param == "" {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+	}
+
+	value, err := strconv.ParseUint(param, 10, 64)
+	if err != nil {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %s", param, err)
+	}
+
+	return iotago.SlotIndex(value), nil
+}
+
+func ParseEpochParam(c echo.Context, paramName string) (iotago.EpochIndex, error) {
+	param := c.Param(paramName)
+
+	if param == "" {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+	}
+
+	value, err := strconv.ParseUint(param, 10, 64)
+	if err != nil {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %s", param, err)
+	}
+
+	return iotago.EpochIndex(value), nil
+}
+
 func GetURL(protocol string, host string, port uint16, path ...string) string {
 	return fmt.Sprintf("%s://%s%s", protocol, net.JoinHostPort(host, strconv.Itoa(int(port))), strings.Join(path, "/"))
 }
