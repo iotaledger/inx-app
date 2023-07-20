@@ -162,6 +162,36 @@ func ParseUint32QueryParam(c echo.Context, paramName string, maxValue ...uint32)
 	return uint32(value), nil
 }
 
+func ParseSlotQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, error) {
+	slotParam := c.QueryParam(paramName)
+
+	if slotParam == "" {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+	}
+
+	value, err := strconv.ParseUint(slotParam, 10, 64)
+	if err != nil {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", slotParam, err)
+	}
+
+	return iotago.SlotIndex(value), nil
+}
+
+func ParseEpochQueryParam(c echo.Context, paramName string) (iotago.EpochIndex, error) {
+	epochParam := c.QueryParam(paramName)
+
+	if epochParam == "" {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+	}
+
+	value, err := strconv.ParseUint(epochParam, 10, 64)
+	if err != nil {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", epochParam, err)
+	}
+
+	return iotago.EpochIndex(value), nil
+}
+
 func ParseHexQueryParam(c echo.Context, paramName string, maxLen int) ([]byte, error) {
 	param := c.QueryParam(paramName)
 
@@ -251,58 +281,58 @@ func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, erro
 	return outputID, nil
 }
 
-func ParseAccountIDParam(c echo.Context, paramName string) (*iotago.AccountID, error) {
-	accountIDParam := strings.ToLower(c.Param(paramName))
+func ParseAccountIDParam(c echo.Context, paramName string) (iotago.AccountID, error) {
+	accountID := iotago.AccountID{}
+	accountIDHex := strings.ToLower(c.Param(paramName))
 
-	accountIDBytes, err := hexutil.DecodeHex(accountIDParam)
+	accountIDBytes, err := hexutil.DecodeHex(accountIDHex)
 	if err != nil {
-		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid accountID: %s, error: %w", accountIDParam, err)
+		return accountID, ierrors.Wrapf(ErrInvalidParameter, "invalid accountID: %s, error: %w", accountIDHex, err)
 	}
 
 	if len(accountIDBytes) != iotago.AccountIDLength {
-		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid accountID: %s, error: %w", accountIDParam, err)
+		return accountID, ierrors.Wrapf(ErrInvalidParameter, "invalid accountID: %s, invalid length: %d", accountIDHex, len(accountIDBytes))
 	}
 
-	var accountID iotago.AccountID
 	copy(accountID[:], accountIDBytes)
 
-	return &accountID, nil
+	return accountID, nil
 }
 
-func ParseNFTIDParam(c echo.Context, paramName string) (*iotago.NFTID, error) {
-	nftIDParam := strings.ToLower(c.Param(paramName))
+func ParseNFTIDParam(c echo.Context, paramName string) (iotago.NFTID, error) {
+	nftID := iotago.NFTID{}
+	nftIDHex := strings.ToLower(c.Param(paramName))
 
-	nftIDBytes, err := hexutil.DecodeHex(nftIDParam)
+	nftIDBytes, err := hexutil.DecodeHex(nftIDHex)
 	if err != nil {
-		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid NFT ID: %s, error: %w", nftIDParam, err)
+		return nftID, ierrors.Wrapf(ErrInvalidParameter, "invalid NFT ID: %s, error: %w", nftIDHex, err)
 	}
 
 	if len(nftIDBytes) != iotago.NFTIDLength {
-		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid NFT ID: %s, error: %w", nftIDParam, err)
+		return nftID, ierrors.Wrapf(ErrInvalidParameter, "invalid nftID: %s, invalid length: %d", nftIDHex, len(nftIDBytes))
 	}
 
-	var nftID iotago.NFTID
 	copy(nftID[:], nftIDBytes)
 
-	return &nftID, nil
+	return nftID, nil
 }
 
-func ParseFoundryIDParam(c echo.Context, paramName string) (*iotago.FoundryID, error) {
-	foundryIDParam := strings.ToLower(c.Param(paramName))
+func ParseFoundryIDParam(c echo.Context, paramName string) (iotago.FoundryID, error) {
+	foundryID := iotago.FoundryID{}
+	foundryIDHex := strings.ToLower(c.Param(paramName))
 
-	foundryIDBytes, err := hexutil.DecodeHex(foundryIDParam)
+	foundryIDBytes, err := hexutil.DecodeHex(foundryIDHex)
 	if err != nil {
-		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid foundry ID: %s, error: %w", foundryIDParam, err)
+		return foundryID, ierrors.Wrapf(ErrInvalidParameter, "invalid foundry ID: %s, error: %w", foundryIDHex, err)
 	}
 
 	if len(foundryIDBytes) != iotago.FoundryIDLength {
-		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid foundry ID: %s, error: %w", foundryIDParam, err)
+		return foundryID, ierrors.Wrapf(ErrInvalidParameter, "invalid foundryID: %s, invalid length: %d", foundryIDHex, len(foundryIDBytes))
 	}
 
-	var foundryID iotago.FoundryID
 	copy(foundryID[:], foundryIDBytes)
 
-	return &foundryID, nil
+	return foundryID, nil
 }
 
 func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uint64, error) {
@@ -323,6 +353,36 @@ func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uin
 	}
 
 	return value, nil
+}
+
+func ParseSlotParam(c echo.Context, paramName string) (iotago.SlotIndex, error) {
+	slotParam := strings.ToLower(c.Param(paramName))
+
+	if slotParam == "" {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+	}
+
+	value, err := strconv.ParseUint(slotParam, 10, 64)
+	if err != nil {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", slotParam, err)
+	}
+
+	return iotago.SlotIndex(value), nil
+}
+
+func ParseEpochParam(c echo.Context, paramName string) (iotago.EpochIndex, error) {
+	epochParam := strings.ToLower(c.Param(paramName))
+
+	if epochParam == "" {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+	}
+
+	value, err := strconv.ParseUint(epochParam, 10, 64)
+	if err != nil {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", epochParam, err)
+	}
+
+	return iotago.EpochIndex(value), nil
 }
 
 func GetURL(protocol string, host string, port uint16, path ...string) string {
