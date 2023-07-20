@@ -163,30 +163,30 @@ func ParseUint32QueryParam(c echo.Context, paramName string, maxValue ...uint32)
 }
 
 func ParseSlotQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, error) {
-	param := c.QueryParam(paramName)
+	slotParam := c.QueryParam(paramName)
 
-	if param == "" {
+	if slotParam == "" {
 		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
 	}
 
-	value, err := strconv.ParseUint(param, 10, 64)
+	value, err := strconv.ParseUint(slotParam, 10, 64)
 	if err != nil {
-		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", param, err)
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", slotParam, err)
 	}
 
 	return iotago.SlotIndex(value), nil
 }
 
 func ParseEpochQueryParam(c echo.Context, paramName string) (iotago.EpochIndex, error) {
-	param := c.QueryParam(paramName)
+	epochParam := c.QueryParam(paramName)
 
-	if param == "" {
+	if epochParam == "" {
 		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
 	}
 
-	value, err := strconv.ParseUint(param, 10, 64)
+	value, err := strconv.ParseUint(epochParam, 10, 64)
 	if err != nil {
-		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", param, err)
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", epochParam, err)
 	}
 
 	return iotago.EpochIndex(value), nil
@@ -282,21 +282,21 @@ func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, erro
 }
 
 func ParseAccountIDParam(c echo.Context, paramName string) (iotago.AccountID, error) {
-	accountIDParam := strings.ToLower(c.Param(paramName))
+	accountID := iotago.AccountID{}
+	accountIDHex := strings.ToLower(c.Param(paramName))
 
-	accountIDBytes, err := hexutil.DecodeHex(accountIDParam)
+	accountIDBytes, err := hexutil.DecodeHex(accountIDHex)
 	if err != nil {
-		return iotago.AccountID{}, ierrors.Wrapf(ErrInvalidParameter, "invalid accountID: %s, error: %w", accountIDParam, err)
+		return accountID, ierrors.Wrapf(ErrInvalidParameter, "invalid accountID: %s, error: %w", accountIDHex, err)
 	}
 
 	if len(accountIDBytes) != iotago.AccountIDLength {
-		return iotago.AccountID{}, ierrors.Wrapf(ErrInvalidParameter, "invalid accountID: %s, error: %w", accountIDParam, err)
+		return accountID, ierrors.Wrapf(ErrInvalidParameter, "invalid accountID: %s, invalid length: %d", accountIDHex, len(accountIDBytes))
 	}
 
-	var accountID iotago.AccountID
 	copy(accountID[:], accountIDBytes)
 
-	return iotago.AccountID{}, nil
+	return accountID, nil
 }
 
 func ParseNFTIDParam(c echo.Context, paramName string) (*iotago.NFTID, error) {
@@ -356,30 +356,30 @@ func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uin
 }
 
 func ParseSlotParam(c echo.Context, paramName string) (iotago.SlotIndex, error) {
-	param := c.Param(paramName)
+	slotParam := strings.ToLower(c.Param(paramName))
 
-	if param == "" {
+	if slotParam == "" {
 		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
 	}
 
-	value, err := strconv.ParseUint(param, 10, 64)
+	value, err := strconv.ParseUint(slotParam, 10, 64)
 	if err != nil {
-		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", param, err)
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", slotParam, err)
 	}
 
 	return iotago.SlotIndex(value), nil
 }
 
 func ParseEpochParam(c echo.Context, paramName string) (iotago.EpochIndex, error) {
-	param := c.Param(paramName)
+	epochParam := strings.ToLower(c.Param(paramName))
 
-	if param == "" {
+	if epochParam == "" {
 		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
 	}
 
-	value, err := strconv.ParseUint(param, 10, 64)
+	value, err := strconv.ParseUint(epochParam, 10, 64)
 	if err != nil {
-		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", param, err)
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", epochParam, err)
 	}
 
 	return iotago.EpochIndex(value), nil
