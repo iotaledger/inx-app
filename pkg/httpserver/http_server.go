@@ -171,7 +171,7 @@ func ParseSlotQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, er
 
 	value, err := strconv.ParseUint(param, 10, 64)
 	if err != nil {
-		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %s", param, err)
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", param, err)
 	}
 
 	return iotago.SlotIndex(value), nil
@@ -186,7 +186,7 @@ func ParseEpochQueryParam(c echo.Context, paramName string) (iotago.EpochIndex, 
 
 	value, err := strconv.ParseUint(param, 10, 64)
 	if err != nil {
-		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %s", param, err)
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", param, err)
 	}
 
 	return iotago.EpochIndex(value), nil
@@ -364,7 +364,7 @@ func ParseSlotParam(c echo.Context, paramName string) (iotago.SlotIndex, error) 
 
 	value, err := strconv.ParseUint(param, 10, 64)
 	if err != nil {
-		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %s", param, err)
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", param, err)
 	}
 
 	return iotago.SlotIndex(value), nil
@@ -379,7 +379,7 @@ func ParseEpochParam(c echo.Context, paramName string) (iotago.EpochIndex, error
 
 	value, err := strconv.ParseUint(param, 10, 64)
 	if err != nil {
-		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %s", param, err)
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", param, err)
 	}
 
 	return iotago.EpochIndex(value), nil
