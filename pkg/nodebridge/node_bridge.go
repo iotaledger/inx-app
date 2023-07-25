@@ -57,6 +57,7 @@ func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *Node
 			LatestCommittedSlotChanged: event.New1[*Commitment](),
 			LatestFinalizedSlotChanged: event.New1[iotago.SlotIndex](),
 		},
+		apiProvider: api.NewEpochBasedProvider(),
 	}, opts)
 }
 
@@ -84,7 +85,6 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 	}
 	n.NodeConfig = nodeConfig
 
-	n.apiProvider = api.NewEpochBasedProvider()
 	for _, rawParams := range n.NodeConfig.ProtocolParameters {
 		startEpoch, protoParams, err := rawParams.Unwrap()
 		if err != nil {
