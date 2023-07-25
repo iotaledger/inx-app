@@ -42,8 +42,14 @@ func (p *ProtocolEpochVersions) Add(version iotago.Version, epoch iotago.EpochIn
 
 	p.knownVersions[version] = epoch
 
-	slices.SortFunc(p.versionsPerEpoch, func(a, b ProtocolEpochVersion) bool {
-		return a.Version < b.Version
+	slices.SortFunc(p.versionsPerEpoch, func(a, b ProtocolEpochVersion) int {
+		if a.Version < b.Version {
+			return -1
+		} else if a.Version > b.Version {
+			return 1
+		} else {
+			return 0
+		}
 	})
 }
 
