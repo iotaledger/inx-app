@@ -5,68 +5,209 @@ import (
 
 	"github.com/iotaledger/hive.go/ierrors"
 	"github.com/iotaledger/hive.go/lo"
+	"github.com/iotaledger/hive.go/runtime/options"
+	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 	iotago "github.com/iotaledger/iota.go/v4"
 )
 
-type DynamicMockAPIProvider struct {
-	mutex                       sync.RWMutex
-	protocolParametersByVersion map[iotago.Version]iotago.ProtocolParameters
-	protocolVersions            *ProtocolEpochVersions
+type EpochBasedProvider struct {
+	mutex                             sync.RWMutex
+	protocolParametersByVersion       map[iotago.Version]iotago.ProtocolParameters
+	futureProtocolParametersByVersion map[iotago.Version]iotago.Identifier
+	protocolVersions                  *ProtocolEpochVersions
 
 	latestVersionMutex sync.RWMutex
 	latestVersion      iotago.Version
+
+	currentSlotMutex sync.RWMutex
+	currentSlot      iotago.SlotIndex
+
+	optsAPIForMissingVersionCallback func(version iotago.Version) (iotago.API, error)
 }
 
-func NewDynamicMockAPIProvider() *DynamicMockAPIProvider {
-	return &DynamicMockAPIProvider{
-		protocolParametersByVersion: make(map[iotago.Version]iotago.ProtocolParameters),
-		protocolVersions:            NewProtocolEpochVersions(),
+func NewEpochBasedProvider(opts ...options.Option[EpochBasedProvider]) *EpochBasedProvider {
+	return options.Apply(&EpochBasedProvider{
+		protocolParametersByVersion:       make(map[iotago.Version]iotago.ProtocolParameters),
+		futureProtocolParametersByVersion: make(map[iotago.Version]iotago.Identifier),
+		protocolVersions:                  NewProtocolEpochVersions(),
+	}, opts)
+}
+
+func (e *EpochBasedProvider) SetCurrentSlot(slot iotago.SlotIndex) {
+	e.currentSlotMutex.Lock()
+	defer e.currentSlotMutex.Unlock()
+
+	e.currentSlot = slot
+}
+
+func (e *EpochBasedProvider) AddProtocolParametersAtEpoch(protocolParameters iotago.ProtocolParameters, epoch iotago.EpochIndex) {
+	e.AddProtocolParameters(protocolParameters)
+	e.AddVersion(protocolParameters.Version(), epoch)
+}
+
+func (e *EpochBasedProvider) AddProtocolParameters(protocolParameters iotago.ProtocolParameters) {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
+	e.protocolParametersByVersion[protocolParameters.Version()] = protocolParameters
+	delete(e.futureProtocolParametersByVersion, protocolParameters.Version())
+}
+
+func (e *EpochBasedProvider) AddVersion(version iotago.Version, epoch iotago.EpochIndex) {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
+
+	e.protocolVersions.Add(version, epoch)
+
+	e.latestVersionMutex.Lock()
+	defer e.latestVersionMutex.Unlock()
+
+	if e.latestVersion < version {
+		e.latestVersion = version
 	}
 }
 
-func (d *DynamicMockAPIProvider) AddProtocolParameters(epoch iotago.EpochIndex, protocolParameters iotago.ProtocolParameters) {
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
+func (e *EpochBasedProvider) AddFutureVersion(version iotago.Version, protocolParamsHash iotago.Identifier, epoch iotago.EpochIndex) {
+	e.mutex.Lock()
+	defer e.mutex.Unlock()
 
-	d.protocolParametersByVersion[protocolParameters.Version()] = protocolParameters
-	d.protocolVersions.Add(protocolParameters.Version(), epoch)
+	e.protocolVersions.Add(version, epoch)
+	e.futureProtocolParametersByVersion[version] = protocolParamsHash
 
-	d.latestVersionMutex.Lock()
-	defer d.latestVersionMutex.Unlock()
+	e.latestVersionMutex.Lock()
+	defer e.latestVersionMutex.Unlock()
 
-	if d.latestVersion < protocolParameters.Version() {
-		d.latestVersion = protocolParameters.Version()
+	if e.latestVersion < version {
+		e.latestVersion = version
 	}
 }
 
-func (d *DynamicMockAPIProvider) APIForVersion(version iotago.Version) (iotago.API, error) {
-	d.mutex.RLock()
-	defer d.mutex.RUnlock()
+func (e *EpochBasedProvider) APIForVersion(version iotago.Version) (iotago.API, error) {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
 
-	protocolParams, exists := d.protocolParametersByVersion[version]
+	protocolParams, exists := e.protocolParametersByVersion[version]
 	if !exists {
 		return nil, ierrors.Errorf("protocol parameters for version %d are not set", version)
 	}
 
-	return NewAnyAPI(protocolParams), nil
+	switch protocolParams.Version() {
+	case 3:
+		return iotago.V3API(protocolParams), nil
+	}
+
+	if e.optsAPIForMissingVersionCallback != nil {
+		return e.optsAPIForMissingVersionCallback(version)
+	}
+
+	return nil, ierrors.Errorf("no api available for parameters with version %d", protocolParams.Version())
 }
 
-func (d *DynamicMockAPIProvider) APIForSlot(slot iotago.SlotIndex) iotago.API {
-	epoch := d.LatestAPI().TimeProvider().EpochFromSlot(slot)
-	return lo.PanicOnErr(d.APIForVersion(d.protocolVersions.VersionForEpoch(epoch)))
+func (e *EpochBasedProvider) APIForSlot(slot iotago.SlotIndex) iotago.API {
+	epoch := e.LatestAPI().TimeProvider().EpochFromSlot(slot)
+	return lo.PanicOnErr(e.APIForVersion(e.VersionForEpoch(epoch)))
 }
 
-func (d *DynamicMockAPIProvider) APIForEpoch(epoch iotago.EpochIndex) iotago.API {
-	return lo.PanicOnErr(d.APIForVersion(d.protocolVersions.VersionForEpoch(epoch)))
+func (e *EpochBasedProvider) APIForEpoch(epoch iotago.EpochIndex) iotago.API {
+	return lo.PanicOnErr(e.APIForVersion(e.VersionForEpoch(epoch)))
 }
 
-func (d *DynamicMockAPIProvider) LatestAPI() iotago.API {
-	d.latestVersionMutex.RLock()
-	defer d.latestVersionMutex.RUnlock()
+func (e *EpochBasedProvider) LatestAPI() iotago.API {
+	e.latestVersionMutex.RLock()
+	defer e.latestVersionMutex.RUnlock()
 
-	return lo.PanicOnErr(d.APIForVersion(d.latestVersion))
+	// Look up the latest version for which we have protocol parameters.
+	versions := e.protocolVersions.Slice()
+	for i := len(versions) - 1; i >= 0; i-- {
+		if api, err := e.APIForVersion(versions[i].Version); err == nil {
+			return api
+		}
+	}
+
+	panic("no api available")
 }
 
-func (d *DynamicMockAPIProvider) CurrentAPI() iotago.API {
-	return d.LatestAPI()
+func (e *EpochBasedProvider) CurrentAPI() iotago.API {
+	e.currentSlotMutex.RLock()
+	defer e.currentSlotMutex.RUnlock()
+
+	return e.APIForSlot(e.currentSlot)
+}
+
+func (e *EpochBasedProvider) VersionsAndProtocolParametersHash() (iotago.Identifier, error) {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+
+	util := marshalutil.New()
+	for _, version := range e.protocolVersions.Slice() {
+		util.WriteBytes(lo.PanicOnErr(version.Version.Bytes()))
+		util.WriteUint64(uint64(version.StartEpoch))
+
+		var paramsHash iotago.Identifier
+		params, paramsExist := e.protocolParametersByVersion[version.Version]
+		if paramsExist {
+			paramsBytes, err := params.Bytes()
+			if err != nil {
+				return iotago.Identifier{}, ierrors.Wrap(err, "failed to get protocol parameters bytes")
+			}
+
+			paramsHash = iotago.IdentifierFromData(paramsBytes)
+		} else {
+			var hashExists bool
+			paramsHash, hashExists = e.futureProtocolParametersByVersion[version.Version]
+			if !hashExists {
+				return iotago.Identifier{}, ierrors.Errorf("protocol parameters for version %d are not set", version.Version)
+			}
+		}
+
+		hashBytes, err := paramsHash.Bytes()
+		if err != nil {
+			return iotago.Identifier{}, ierrors.Wrap(err, "failed to get protocol parameters hash bytes")
+		}
+		util.WriteBytes(hashBytes)
+	}
+
+	return iotago.IdentifierFromData(util.Bytes()), nil
+}
+
+func (e *EpochBasedProvider) ProtocolParameters(version iotago.Version) iotago.ProtocolParameters {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+
+	return e.protocolParametersByVersion[version]
+}
+
+func (e *EpochBasedProvider) ProtocolParametersHash(version iotago.Version) iotago.Identifier {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+
+	if params, exists := e.protocolParametersByVersion[version]; exists {
+		return lo.PanicOnErr(params.Hash())
+	}
+
+	return e.futureProtocolParametersByVersion[version]
+}
+
+func (e *EpochBasedProvider) ProtocolEpochVersions() []ProtocolEpochVersion {
+	return e.protocolVersions.Slice()
+}
+
+func (e *EpochBasedProvider) EpochForVersion(version iotago.Version) (iotago.EpochIndex, bool) {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+
+	return e.protocolVersions.EpochForVersion(version)
+}
+
+func (e *EpochBasedProvider) VersionForEpoch(epoch iotago.EpochIndex) iotago.Version {
+	e.mutex.RLock()
+	defer e.mutex.RUnlock()
+
+	return e.protocolVersions.VersionForEpoch(epoch)
+}
+
+func WithAPIForMissingVersionCallback(callback func(version iotago.Version) (iotago.API, error)) options.Option[EpochBasedProvider] {
+	return func(provider *EpochBasedProvider) {
+		provider.optsAPIForMissingVersionCallback = callback
+	}
 }

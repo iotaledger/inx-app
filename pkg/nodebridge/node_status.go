@@ -36,8 +36,7 @@ func (n *NodeBridge) IsNodeAlmostSynced() bool {
 }
 
 func (n *NodeBridge) LatestCommitment() (*iotago.Commitment, error) {
-	//TODO: use the api for the correct version
-	return n.NodeStatus().GetLatestCommitment().UnwrapCommitment(n.api)
+	return n.NodeStatus().GetLatestCommitment().UnwrapCommitment(n.apiProvider.CurrentAPI())
 }
 
 func (n *NodeBridge) LatestFinalizedSlot() iotago.SlotIndex {
@@ -83,10 +82,10 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 	updateStatus := func() error {
 		n.nodeStatusMutex.Lock()
 		defer n.nodeStatusMutex.Unlock()
-		if nodeStatus.GetLatestCommitment().GetCommitmentId().Unwrap().Index() > n.nodeStatus.GetLatestCommitment().GetCommitmentId().Unwrap().Index() {
+		if n.nodeStatus == nil || nodeStatus.GetLatestCommitment().GetCommitmentId().Unwrap().Index() > n.nodeStatus.GetLatestCommitment().GetCommitmentId().Unwrap().Index() {
 			latestCommitmentChanged = true
 		}
-		if nodeStatus.GetLatestFinalizedSlot() > n.nodeStatus.GetLatestFinalizedSlot() {
+		if n.nodeStatus == nil || nodeStatus.GetLatestFinalizedSlot() > n.nodeStatus.GetLatestFinalizedSlot() {
 			latestFinalizedSlotChanged = true
 		}
 		n.nodeStatus = nodeStatus
@@ -99,8 +98,10 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 	}
 
 	if latestCommitmentChanged {
-		//TODO: use the api for the correct version
-		commitment, err := commitmentFromINXCommitment(nodeStatus.GetLatestCommitment(), n.api)
+		slot := nodeStatus.GetLatestCommitment().CommitmentId.Unwrap().Index()
+		n.apiProvider.SetCurrentSlot(slot)
+
+		commitment, err := commitmentFromINXCommitment(nodeStatus.GetLatestCommitment(), n.apiProvider.CurrentAPI())
 		if err == nil {
 			n.Events.LatestCommittedSlotChanged.Trigger(commitment)
 		}

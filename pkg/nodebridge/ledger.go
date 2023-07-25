@@ -19,6 +19,7 @@ var (
 )
 
 type LedgerUpdate struct {
+	API       iotago.API
 	SlotIndex iotago.SlotIndex
 	Consumed  []*inx.LedgerSpent
 	Created   []*inx.LedgerOutput
@@ -61,8 +62,10 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex iotag
 				if update != nil {
 					return ErrLedgerUpdateTransactionAlreadyInProgress
 				}
+				slot := iotago.SlotIndex(op.BatchMarker.GetSlot())
 				update = &LedgerUpdate{
-					SlotIndex: iotago.SlotIndex(op.BatchMarker.GetSlot()),
+					API:       n.apiProvider.APIForSlot(slot),
+					SlotIndex: slot,
 					Consumed:  make([]*inx.LedgerSpent, 0),
 					Created:   make([]*inx.LedgerOutput, 0),
 				}

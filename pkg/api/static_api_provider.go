@@ -4,30 +4,30 @@ import (
 	iotago "github.com/iotaledger/iota.go/v4"
 )
 
-func NewStaticProvider(api iotago.API) Provider {
-	return &staticAPIProvider{api: api}
+func SingleVersionProvider(api iotago.API) Provider {
+	return &singleVersionProvider{api: api}
 }
 
-type staticAPIProvider struct {
+type singleVersionProvider struct {
 	api iotago.API
 }
 
-func (t *staticAPIProvider) APIForVersion(iotago.Version) (iotago.API, error) {
+func (t *singleVersionProvider) APIForVersion(iotago.Version) (iotago.API, error) {
 	return t.api, nil
 }
 
-func (t *staticAPIProvider) APIForSlot(iotago.SlotIndex) iotago.API {
+func (t *singleVersionProvider) APIForSlot(iotago.SlotIndex) iotago.API {
 	return t.api
 }
 
-func (t *staticAPIProvider) APIForEpoch(iotago.EpochIndex) iotago.API {
+func (t *singleVersionProvider) APIForEpoch(iotago.EpochIndex) iotago.API {
 	return t.api
 }
 
-func (t *staticAPIProvider) LatestAPI() iotago.API {
+func (t *singleVersionProvider) LatestAPI() iotago.API {
 	return t.api
 }
 
-func (t *staticAPIProvider) CurrentAPI() iotago.API {
+func (t *singleVersionProvider) CurrentAPI() iotago.API {
 	return t.api
 }

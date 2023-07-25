@@ -23,7 +23,6 @@ import (
 type NodeBridge struct {
 	// the logger used to log events.
 	*logger.WrappedLogger
-	api iotago.API
 
 	targetNetworkName string
 	Events            *Events
@@ -31,7 +30,7 @@ type NodeBridge struct {
 	conn        *grpc.ClientConn
 	client      inx.INXClient
 	NodeConfig  *inx.NodeConfiguration
-	apiProvider *api.DynamicMockAPIProvider
+	apiProvider *api.EpochBasedProvider
 
 	nodeStatusMutex sync.RWMutex
 	nodeStatus      *inx.NodeStatus
@@ -85,14 +84,14 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 	}
 	n.NodeConfig = nodeConfig
 
-	n.apiProvider = api.NewDynamicMockAPIProvider()
+	n.apiProvider = api.NewEpochBasedProvider()
 	for _, rawParams := range n.NodeConfig.ProtocolParameters {
 		startEpoch, protoParams, err := rawParams.Unwrap()
 		if err != nil {
 			return err
 		}
 
-		n.apiProvider.AddProtocolParameters(startEpoch, protoParams)
+		n.apiProvider.AddProtocolParametersAtEpoch(protoParams, startEpoch)
 	}
 
 	if n.targetNetworkName != "" {
@@ -107,7 +106,10 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 	if err != nil {
 		return err
 	}
-	n.nodeStatus = nodeStatus
+
+	if err := n.processNodeStatus(nodeStatus); err != nil {
+		return err
+	}
 
 	return nil
 }
