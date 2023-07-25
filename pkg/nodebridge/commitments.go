@@ -37,8 +37,7 @@ func (n *NodeBridge) Commitment(ctx context.Context, index iotago.SlotIndex) (*C
 		return nil, err
 	}
 
-	//TODO: use api depending on version
-	return commitmentFromINXCommitment(ms, n.api)
+	return commitmentFromINXCommitment(ms, n.apiProvider.APIForSlot(index))
 }
 
 func (n *NodeBridge) CommitmentByID(ctx context.Context, id iotago.CommitmentID) (*Commitment, error) {
@@ -50,6 +49,5 @@ func (n *NodeBridge) CommitmentByID(ctx context.Context, id iotago.CommitmentID)
 		return nil, err
 	}
 
-	//TODO: use api depending on version
-	return commitmentFromINXCommitment(ms, n.api)
+	return commitmentFromINXCommitment(ms, n.apiProvider.APIForSlot(id.Index()))
 }
