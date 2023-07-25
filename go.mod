@@ -13,7 +13,7 @@ require (
 	github.com/iotaledger/hive.go/runtime v0.0.0-20230706083020-ef6c3248369d
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20230706083020-ef6c3248369d
 	github.com/iotaledger/hive.go/stringify v0.0.0-20230630101126-a9b43f69f1f0
-	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20230718114816-5207ca439d2a
+	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20230725124538-2e508b412c2c
 	github.com/iotaledger/iota.go/v4 v4.0.0-20230720082722-b4589df61bea
 	github.com/labstack/echo/v4 v4.10.2
 	go.uber.org/dig v1.17.0
@@ -74,7 +74,7 @@ require (
 	golang.org/x/sys v0.10.0 // indirect
 	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230717213848-3f92550aa753 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230724170836-66ad5b6ff146 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
