@@ -13,12 +13,31 @@ import (
 )
 
 func (n *NodeBridge) SubmitBlock(ctx context.Context, block *iotago.ProtocolBlock) (iotago.BlockID, error) {
-	blk, err := inx.WrapBlock(block, n.api)
+	apiForVersion, err := n.apiProvider.APIForVersion(block.ProtocolVersion)
+	if err != nil {
+		return iotago.BlockID{}, err
+	}
+
+	blk, err := inx.WrapBlock(block, apiForVersion)
 	if err != nil {
 		return iotago.BlockID{}, err
 	}
 
 	response, err := n.client.SubmitBlock(ctx, blk)
+	if err != nil {
+		return iotago.BlockID{}, err
+	}
+
+	return response.Unwrap(), nil
+}
+
+func (n *NodeBridge) SubmitPayload(ctx context.Context, payload iotago.BlockPayload) (iotago.BlockID, error) {
+	p, err := inx.WrapPayload(payload, n.apiProvider.CurrentAPI())
+	if err != nil {
+		return iotago.BlockID{}, err
+	}
+
+	response, err := n.client.SubmitPayload(ctx, p)
 	if err != nil {
 		return iotago.BlockID{}, err
 	}
@@ -36,7 +55,7 @@ func (n *NodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago
 		return nil, err
 	}
 
-	return inxMsg.UnwrapBlock(n.api)
+	return inxMsg.UnwrapBlock(n.apiProvider.APIForSlot(blockID.Index()))
 }
 
 func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFunc, consumer func(block *iotago.ProtocolBlock)) error {
@@ -61,7 +80,7 @@ func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFu
 			break
 		}
 
-		consumer(block.MustUnwrapBlock(n.api))
+		consumer(block.MustUnwrapBlock(n.apiProvider.APIForSlot(block.UnwrapBlockID().Index())))
 	}
 
 	//nolint:nilerr // false positive
