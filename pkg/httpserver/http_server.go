@@ -335,6 +335,24 @@ func ParseFoundryIDParam(c echo.Context, paramName string) (iotago.FoundryID, er
 	return foundryID, nil
 }
 
+func ParseDelegationIDParam(c echo.Context, paramName string) (iotago.DelegationID, error) {
+	delegationID := iotago.DelegationID{}
+	delegationIDHex := strings.ToLower(c.Param(paramName))
+
+	delegationIDBytes, err := hexutil.DecodeHex(delegationIDHex)
+	if err != nil {
+		return delegationID, ierrors.Wrapf(ErrInvalidParameter, "invalid delegationID: %s, error: %w", delegationIDHex, err)
+	}
+
+	if len(delegationIDBytes) != iotago.DelegationIDLength {
+		return delegationID, ierrors.Wrapf(ErrInvalidParameter, "invalid delegationID: %s, invalid length: %d", delegationIDHex, len(delegationIDBytes))
+	}
+
+	copy(delegationID[:], delegationIDBytes)
+
+	return delegationID, nil
+}
+
 func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uint64, error) {
 	intString := strings.ToLower(c.Param(paramName))
 	if intString == "" {
