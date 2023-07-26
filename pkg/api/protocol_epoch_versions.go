@@ -2,8 +2,7 @@ package api
 
 import (
 	"fmt"
-
-	"golang.org/x/exp/slices"
+	"sort"
 
 	"github.com/iotaledger/hive.go/ierrors"
 	"github.com/iotaledger/hive.go/lo"
@@ -42,8 +41,8 @@ func (p *ProtocolEpochVersions) Add(version iotago.Version, epoch iotago.EpochIn
 
 	p.knownVersions[version] = epoch
 
-	slices.SortFunc(p.versionsPerEpoch, func(a, b ProtocolEpochVersion) bool {
-		return a.Version < b.Version
+	sort.Slice(p.versionsPerEpoch, func(i, j int) bool {
+		return p.versionsPerEpoch[i].Version < p.versionsPerEpoch[j].Version
 	})
 }
 
