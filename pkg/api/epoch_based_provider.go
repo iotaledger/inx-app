@@ -51,6 +51,13 @@ func (e *EpochBasedProvider) AddProtocolParameters(protocolParameters iotago.Pro
 
 	e.protocolParametersByVersion[protocolParameters.Version()] = protocolParameters
 	delete(e.futureProtocolParametersByVersion, protocolParameters.Version())
+
+	e.latestVersionMutex.Lock()
+	defer e.latestVersionMutex.Unlock()
+
+	if e.latestVersion < protocolParameters.Version() {
+		e.latestVersion = protocolParameters.Version()
+	}
 }
 
 func (e *EpochBasedProvider) AddVersion(version iotago.Version, epoch iotago.EpochIndex) {
@@ -58,13 +65,6 @@ func (e *EpochBasedProvider) AddVersion(version iotago.Version, epoch iotago.Epo
 	defer e.mutex.Unlock()
 
 	e.protocolVersions.Add(version, epoch)
-
-	e.latestVersionMutex.Lock()
-	defer e.latestVersionMutex.Unlock()
-
-	if e.latestVersion < version {
-		e.latestVersion = version
-	}
 }
 
 func (e *EpochBasedProvider) AddFutureVersion(version iotago.Version, protocolParamsHash iotago.Identifier, epoch iotago.EpochIndex) {
@@ -73,13 +73,6 @@ func (e *EpochBasedProvider) AddFutureVersion(version iotago.Version, protocolPa
 
 	e.protocolVersions.Add(version, epoch)
 	e.futureProtocolParametersByVersion[version] = protocolParamsHash
-
-	e.latestVersionMutex.Lock()
-	defer e.latestVersionMutex.Unlock()
-
-	if e.latestVersion < version {
-		e.latestVersion = version
-	}
 }
 
 func (e *EpochBasedProvider) APIForVersion(version iotago.Version) (iotago.API, error) {
@@ -116,15 +109,12 @@ func (e *EpochBasedProvider) LatestAPI() iotago.API {
 	e.latestVersionMutex.RLock()
 	defer e.latestVersionMutex.RUnlock()
 
-	// Look up the latest version for which we have protocol parameters.
-	versions := e.protocolVersions.Slice()
-	for i := len(versions) - 1; i >= 0; i-- {
-		if api, err := e.APIForVersion(versions[i].Version); err == nil {
-			return api
-		}
+	api, err := e.APIForVersion(e.latestVersion)
+	if err != nil {
+		panic(err)
 	}
 
-	panic("no api available")
+	return api
 }
 
 func (e *EpochBasedProvider) CurrentAPI() iotago.API {
