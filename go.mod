@@ -13,8 +13,8 @@ require (
 	github.com/iotaledger/hive.go/runtime v0.0.0-20230706083020-ef6c3248369d
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20230706083020-ef6c3248369d
 	github.com/iotaledger/hive.go/stringify v0.0.0-20230630101126-a9b43f69f1f0
-	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20230725124538-2e508b412c2c
-	github.com/iotaledger/iota.go/v4 v4.0.0-20230720082722-b4589df61bea
+	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20230726065442-90d758432bb7
+	github.com/iotaledger/iota.go/v4 v4.0.0-20230726065214-ae527d50eee7
 	github.com/labstack/echo/v4 v4.10.2
 	go.uber.org/dig v1.17.0
 	golang.org/x/exp v0.0.0-20230206171751-46f607a40771
