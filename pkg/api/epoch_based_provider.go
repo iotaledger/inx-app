@@ -84,6 +84,7 @@ func (e *EpochBasedProvider) APIForVersion(version iotago.Version) (iotago.API, 
 		return nil, ierrors.Errorf("protocol parameters for version %d are not set", version)
 	}
 
+	//nolint:gocritic // further version will be added here
 	switch protocolParams.Version() {
 	case 3:
 		return iotago.V3API(protocolParams), nil
