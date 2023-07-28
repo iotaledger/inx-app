@@ -107,11 +107,7 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 		return err
 	}
 
-	if err := n.processNodeStatus(nodeStatus); err != nil {
-		return err
-	}
-
-	return nil
+	return n.processNodeStatus(nodeStatus)
 }
 
 func (n *NodeBridge) Run(ctx context.Context) {
