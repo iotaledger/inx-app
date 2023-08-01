@@ -27,20 +27,16 @@ func (n *NodeBridge) IsNodeHealthy() bool {
 	return n.NodeStatus().GetIsHealthy()
 }
 
-func (n *NodeBridge) IsNodeSynced() bool {
-	return n.NodeStatus().GetIsSynced()
-}
-
-func (n *NodeBridge) IsNodeAlmostSynced() bool {
-	return n.NodeStatus().GetIsAlmostSynced()
-}
-
 func (n *NodeBridge) LatestCommitment() (*iotago.Commitment, error) {
 	return n.NodeStatus().GetLatestCommitment().UnwrapCommitment(n.apiProvider.CurrentAPI())
 }
 
 func (n *NodeBridge) LatestFinalizedSlot() iotago.SlotIndex {
 	return iotago.SlotIndex(n.NodeStatus().GetLatestFinalizedSlot())
+}
+
+func (n *NodeBridge) PruningSlot() iotago.SlotIndex {
+	return iotago.SlotIndex(n.NodeStatus().GetPruningSlot())
 }
 
 func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.CancelFunc) error {
