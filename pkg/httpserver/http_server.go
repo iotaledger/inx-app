@@ -203,7 +203,7 @@ func ParseCursorQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, 
 		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, in parsing query parameter: %s error: %w", cursorParts[0], paramName, err)
 	}
 	startedAtSlot := iotago.SlotIndex(part1)
-	part2, err := strconv.ParseUint(cursorParts[1], 10, 64)
+	part2, err := strconv.ParseUint(cursorParts[1], 10, 32)
 	if err != nil {
 		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, in parsing query parameter: %s error: %w", cursorParts[1], paramName, err)
 	}
