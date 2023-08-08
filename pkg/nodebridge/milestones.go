@@ -42,12 +42,22 @@ func (n *NodeBridge) LatestMilestone() (*Milestone, error) {
 }
 
 func (n *NodeBridge) LatestMilestoneIndex() uint32 {
-	latestMilestone, err := n.LatestMilestone()
-	if err != nil || latestMilestone == nil {
+	n.nodeStatusMutex.RLock()
+	defer n.nodeStatusMutex.RUnlock()
+
+	// access the milestone info directly,
+	// in case the index is known but not the milestone itself (node bootstrap)
+	ms := n.nodeStatus.GetLatestMilestone()
+	if ms == nil {
 		return 0
 	}
 
-	return latestMilestone.Milestone.Index
+	msInfo := ms.GetMilestoneInfo()
+	if msInfo == nil {
+		return 0
+	}
+
+	return msInfo.MilestoneIndex
 }
 
 func (n *NodeBridge) ConfirmedMilestone() (*Milestone, error) {
@@ -58,12 +68,22 @@ func (n *NodeBridge) ConfirmedMilestone() (*Milestone, error) {
 }
 
 func (n *NodeBridge) ConfirmedMilestoneIndex() uint32 {
-	confirmedMilestone, err := n.ConfirmedMilestone()
-	if err != nil || confirmedMilestone == nil {
+	n.nodeStatusMutex.RLock()
+	defer n.nodeStatusMutex.RUnlock()
+
+	// access the milestone info directly,
+	// in case the index is known but not the milestone itself (node bootstrap)
+	ms := n.nodeStatus.GetConfirmedMilestone()
+	if ms == nil {
 		return 0
 	}
 
-	return confirmedMilestone.Milestone.Index
+	msInfo := ms.GetMilestoneInfo()
+	if msInfo == nil {
+		return 0
+	}
+
+	return msInfo.MilestoneIndex
 }
 
 func (n *NodeBridge) Milestone(ctx context.Context, index uint32) (*Milestone, error) {
