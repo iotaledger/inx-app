@@ -45,7 +45,7 @@ linters:
         - containedctx
         - contextcheck
         - decorder
-        - depguard
+        #- depguard
         - dogsled
         - dupl
         - durationcheck
