@@ -192,6 +192,26 @@ func ParseEpochQueryParam(c echo.Context, paramName string) (iotago.EpochIndex, 
 	return iotago.EpochIndex(value), nil
 }
 
+func ParseCursorQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, uint32, error) {
+	cursor := c.QueryParam(paramName)
+	if cursor == "" {
+		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+	}
+	cursorParts := strings.Split(cursor, ",")
+	part1, err := strconv.ParseUint(cursorParts[0], 10, 64)
+	if err != nil {
+		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, in parsing query parameter: %s error: %w", cursorParts[0], paramName, err)
+	}
+	startedAtSlot := iotago.SlotIndex(part1)
+	part2, err := strconv.ParseUint(cursorParts[1], 10, 32)
+	if err != nil {
+		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, in parsing query parameter: %s error: %w", cursorParts[1], paramName, err)
+	}
+	index := uint32(part2)
+
+	return startedAtSlot, index, nil
+}
+
 func ParseHexQueryParam(c echo.Context, paramName string, maxLen int) ([]byte, error) {
 	param := c.QueryParam(paramName)
 
