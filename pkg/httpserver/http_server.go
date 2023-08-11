@@ -20,6 +20,7 @@ import (
 )
 
 const (
+	MIMEApplicationVendorIOTASerializerV1 = "application/vnd.iota.serializer-v1"
 	MIMEApplicationVendorIOTASerializerV2 = "application/vnd.iota.serializer-v2"
 	ProtocolHTTP                          = "http"
 	ProtocolHTTPS                         = "https"
