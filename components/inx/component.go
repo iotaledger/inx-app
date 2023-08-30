@@ -15,12 +15,11 @@ const PriorityDisconnectINX = 0
 
 func init() {
 	Component = &app.Component{
-		Name:      "INX",
-		DepsFunc:  func(cDeps dependencies) { deps = cDeps },
-		Params:    params,
-		Provide:   provide,
-		Run:       run,
-		IsEnabled: func(*dig.Container) bool { return true },
+		Name:     "INX",
+		DepsFunc: func(cDeps dependencies) { deps = cDeps },
+		Params:   params,
+		Provide:  provide,
+		Run:      run,
 	}
 }
 
