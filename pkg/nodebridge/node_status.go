@@ -31,8 +31,8 @@ func (n *NodeBridge) LatestCommitment() (*iotago.Commitment, error) {
 	return n.NodeStatus().GetLatestCommitment().UnwrapCommitment(n.apiProvider.CurrentAPI())
 }
 
-func (n *NodeBridge) LatestFinalizedSlot() iotago.SlotIndex {
-	return iotago.SlotIndex(n.NodeStatus().GetLatestFinalizedSlot())
+func (n *NodeBridge) LatestFinalizedCommitment() (*iotago.Commitment, error) {
+	return n.NodeStatus().GetLatestFinalizedCommitment().UnwrapCommitment(n.apiProvider.CurrentAPI())
 }
 
 func (n *NodeBridge) PruningSlot() iotago.SlotIndex {
@@ -81,7 +81,7 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 		if n.nodeStatus == nil || nodeStatus.GetLatestCommitment().GetCommitmentId().Unwrap().Index() > n.nodeStatus.GetLatestCommitment().GetCommitmentId().Unwrap().Index() {
 			latestCommitmentChanged = true
 		}
-		if n.nodeStatus == nil || nodeStatus.GetLatestFinalizedSlot() > n.nodeStatus.GetLatestFinalizedSlot() {
+		if n.nodeStatus == nil || nodeStatus.GetLatestFinalizedCommitment().GetCommitmentId().Unwrap().Index() > n.nodeStatus.GetLatestFinalizedCommitment().GetCommitmentId().Unwrap().Index() {
 			latestFinalizedSlotChanged = true
 		}
 		n.nodeStatus = nodeStatus
@@ -104,7 +104,10 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 	}
 
 	if latestFinalizedSlotChanged {
-		n.Events.LatestFinalizedSlotChanged.Trigger(iotago.SlotIndex(nodeStatus.GetLatestFinalizedSlot()))
+		commitment, err := commitmentFromINXCommitment(nodeStatus.GetLatestFinalizedCommitment(), n.apiProvider.CurrentAPI())
+		if err == nil {
+			n.Events.LatestFinalizedSlotChanged.Trigger(commitment)
+		}
 	}
 
 	return nil
