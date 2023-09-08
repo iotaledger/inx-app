@@ -31,8 +31,8 @@ func (n *NodeBridge) LatestCommitment() (*iotago.Commitment, error) {
 	return n.NodeStatus().GetLatestCommitment().UnwrapCommitment(n.apiProvider.CurrentAPI())
 }
 
-func (n *NodeBridge) LatestFinalizedCommitment() (*iotago.Commitment, error) {
-	return n.NodeStatus().GetLatestFinalizedCommitment().UnwrapCommitment(n.apiProvider.CurrentAPI())
+func (n *NodeBridge) LatestFinalizedCommitmentID() iotago.CommitmentID {
+	return n.NodeStatus().GetLatestFinalizedCommitmentId().Unwrap()
 }
 
 func (n *NodeBridge) PruningEpoch() iotago.EpochIndex {
@@ -81,7 +81,7 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 		if n.nodeStatus == nil || nodeStatus.GetLatestCommitment().GetCommitmentId().Unwrap().Index() > n.nodeStatus.GetLatestCommitment().GetCommitmentId().Unwrap().Index() {
 			latestCommitmentChanged = true
 		}
-		if n.nodeStatus == nil || nodeStatus.GetLatestFinalizedCommitment().GetCommitmentId().Unwrap().Index() > n.nodeStatus.GetLatestFinalizedCommitment().GetCommitmentId().Unwrap().Index() {
+		if n.nodeStatus == nil || nodeStatus.GetLatestFinalizedCommitmentId().Unwrap().Index() > n.nodeStatus.GetLatestFinalizedCommitmentId().Unwrap().Index() {
 			latestFinalizedSlotChanged = true
 		}
 		n.nodeStatus = nodeStatus
@@ -104,10 +104,7 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 	}
 
 	if latestFinalizedSlotChanged {
-		commitment, err := commitmentFromINXCommitment(nodeStatus.GetLatestFinalizedCommitment(), n.apiProvider.CurrentAPI())
-		if err == nil {
-			n.Events.LatestFinalizedSlotChanged.Trigger(commitment)
-		}
+		n.Events.LatestFinalizedSlotChanged.Trigger(nodeStatus.LatestFinalizedCommitmentId.Unwrap())
 	}
 
 	return nil

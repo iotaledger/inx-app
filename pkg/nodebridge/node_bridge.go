@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/hive.go/runtime/options"
 	inx "github.com/iotaledger/inx/go"
+	iotago "github.com/iotaledger/iota.go/v4"
 	"github.com/iotaledger/iota.go/v4/api"
 	"github.com/iotaledger/iota.go/v4/nodeclient"
 )
@@ -37,7 +38,7 @@ type NodeBridge struct {
 
 type Events struct {
 	LatestCommittedSlotChanged *event.Event1[*Commitment]
-	LatestFinalizedSlotChanged *event.Event1[*Commitment]
+	LatestFinalizedSlotChanged *event.Event1[iotago.CommitmentID]
 }
 
 // WithTargetNetworkName checks if the network name of the node is equal to the given targetNetworkName.
@@ -54,7 +55,7 @@ func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *Node
 		targetNetworkName: "",
 		Events: &Events{
 			LatestCommittedSlotChanged: event.New1[*Commitment](),
-			LatestFinalizedSlotChanged: event.New1[*Commitment](),
+			LatestFinalizedSlotChanged: event.New1[iotago.CommitmentID](),
 		},
 		apiProvider: api.NewEpochBasedProvider(),
 	}, opts)
