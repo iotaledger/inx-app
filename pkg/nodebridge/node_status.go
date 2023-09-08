@@ -35,8 +35,8 @@ func (n *NodeBridge) LatestFinalizedCommitment() (*iotago.Commitment, error) {
 	return n.NodeStatus().GetLatestFinalizedCommitment().UnwrapCommitment(n.apiProvider.CurrentAPI())
 }
 
-func (n *NodeBridge) PruningSlot() iotago.SlotIndex {
-	return iotago.SlotIndex(n.NodeStatus().GetPruningSlot())
+func (n *NodeBridge) PruningEpoch() iotago.EpochIndex {
+	return iotago.EpochIndex(n.NodeStatus().GetPruningEpoch())
 }
 
 func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.CancelFunc) error {
