@@ -15,7 +15,7 @@ require (
 	github.com/labstack/echo/v4 v4.11.1
 	github.com/pkg/errors v0.9.1
 	go.uber.org/dig v1.17.0
-	google.golang.org/grpc v1.57.0
+	google.golang.org/grpc v1.58.1
 )
 
 require (
