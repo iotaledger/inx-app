@@ -128,7 +128,7 @@ func (n *NodeBridge) Client() inx.INXClient {
 	return n.client
 }
 
-func (n *NodeBridge) APIProvider() api.Provider {
+func (n *NodeBridge) APIProvider() iotago.APIProvider {
 	return n.apiProvider
 }
 
