@@ -147,7 +147,7 @@ func (t *TangleListener) RegisterSlotConfirmedEvent(sIndex uint32) *valuenotifie
 		// this should never fail
 		panic(err)
 	}
-	if comm != nil && comm.Commitment.Index >= iotago.SlotIndex(sIndex) {
+	if comm != nil && comm.Commitment.Index >= iotago.Slot(sIndex) {
 		// trigger the sync event, because the slot is already confirmed
 		t.commitmentConfirmedNotifier.Notify(sIndex)
 	}
