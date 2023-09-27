@@ -1,7 +1,5 @@
 package nodebridge
 
-/*
-
 import (
 	"context"
 
@@ -9,12 +7,11 @@ import (
 	iotago "github.com/iotaledger/iota.go/v4"
 )
 
-func (n *NodeBridge) RequestTips(ctx context.Context, count uint32, allowSemiLazy bool) (iotago.BlockIDs, error) {
-	tipsResponse, err := n.client.RequestTips(ctx, &inx.TipsRequest{Count: count, AllowSemiLazy: allowSemiLazy})
+func (n *NodeBridge) RequestTips(ctx context.Context, count uint32) (strong iotago.BlockIDs, weak iotago.BlockIDs, shallowLike iotago.BlockIDs, err error) {
+	tipsResponse, err := n.client.RequestTips(ctx, &inx.TipsRequest{Count: count})
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	return tipsResponse.UnwrapTips(), nil
+	return tipsResponse.UnwrapStrongTips(), tipsResponse.UnwrapWeakTips(), tipsResponse.UnwrapShallowLikeTips(), nil
 }
-*/
