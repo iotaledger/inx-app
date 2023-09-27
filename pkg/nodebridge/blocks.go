@@ -31,20 +31,6 @@ func (n *NodeBridge) SubmitBlock(ctx context.Context, block *iotago.ProtocolBloc
 	return response.Unwrap(), nil
 }
 
-func (n *NodeBridge) SubmitPayload(ctx context.Context, payload iotago.BlockPayload) (iotago.BlockID, error) {
-	p, err := inx.WrapPayload(payload, n.apiProvider.CurrentAPI())
-	if err != nil {
-		return iotago.BlockID{}, err
-	}
-
-	response, err := n.client.SubmitPayload(ctx, p)
-	if err != nil {
-		return iotago.BlockID{}, err
-	}
-
-	return response.Unwrap(), nil
-}
-
 func (n *NodeBridge) BlockMetadata(ctx context.Context, blockID iotago.BlockID) (*inx.BlockMetadata, error) {
 	return n.client.ReadBlockMetadata(ctx, inx.NewBlockId(blockID))
 }
