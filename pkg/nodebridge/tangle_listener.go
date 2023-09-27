@@ -147,7 +147,7 @@ func (t *TangleListener) RegisterSlotConfirmedEvent(sIndex uint32) *valuenotifie
 		// this should never fail
 		panic(err)
 	}
-	if comm != nil && comm.Commitment.Index >= iotago.SlotIndex(sIndex) {
+	if comm != nil && comm.Commitment.Slot >= iotago.Slot(sIndex) {
 		// trigger the sync event, because the slot is already confirmed
 		t.commitmentConfirmedNotifier.Notify(sIndex)
 	}
@@ -166,7 +166,7 @@ func (t *TangleListener) Run(ctx context.Context) {
 	}()
 
 	hook := t.nodeBridge.Events.LatestFinalizedSlotChanged.Hook(func(c *Commitment) {
-		t.commitmentConfirmedNotifier.Notify(uint32(c.Commitment.Index))
+		t.commitmentConfirmedNotifier.Notify(uint32(c.Commitment.Slot))
 	})
 	defer hook.Unhook()
 	<-c.Done()

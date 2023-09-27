@@ -19,16 +19,16 @@ var (
 )
 
 type LedgerUpdate struct {
-	API       iotago.API
-	SlotIndex iotago.SlotIndex
-	Consumed  []*inx.LedgerSpent
-	Created   []*inx.LedgerOutput
+	API      iotago.API
+	Slot     iotago.SlotIndex
+	Consumed []*inx.LedgerSpent
+	Created  []*inx.LedgerOutput
 }
 
-func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex iotago.SlotIndex, endIndex iotago.SlotIndex, consume func(update *LedgerUpdate) error) error {
+func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consume func(update *LedgerUpdate) error) error {
 	req := &inx.SlotRangeRequest{
-		StartSlot: uint64(startIndex),
-		EndSlot:   uint64(endIndex),
+		StartSlot: uint64(startSlot),
+		EndSlot:   uint64(endSlot),
 	}
 
 	stream, err := n.client.ListenToLedgerUpdates(ctx, req)
@@ -64,10 +64,10 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex iotag
 				}
 				slot := iotago.SlotIndex(op.BatchMarker.GetSlot())
 				update = &LedgerUpdate{
-					API:       n.apiProvider.APIForSlot(slot),
-					SlotIndex: slot,
-					Consumed:  make([]*inx.LedgerSpent, 0),
-					Created:   make([]*inx.LedgerOutput, 0),
+					API:      n.apiProvider.APIForSlot(slot),
+					Slot:     slot,
+					Consumed: make([]*inx.LedgerSpent, 0),
+					Created:  make([]*inx.LedgerOutput, 0),
 				}
 
 			//nolint:nosnakecase // grpc uses underscores
@@ -78,7 +78,7 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startIndex iotag
 				}
 				if uint32(len(update.Consumed)) != op.BatchMarker.GetConsumedCount() ||
 					uint32(len(update.Created)) != op.BatchMarker.GetCreatedCount() ||
-					update.SlotIndex != iotago.SlotIndex(op.BatchMarker.GetSlot()) {
+					update.Slot != iotago.SlotIndex(op.BatchMarker.GetSlot()) {
 					return ErrLedgerUpdateEndedAbruptly
 				}
 
