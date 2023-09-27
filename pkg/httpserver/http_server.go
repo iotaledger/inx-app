@@ -374,6 +374,21 @@ func ParseDelegationIDParam(c echo.Context, paramName string) (iotago.Delegation
 	return delegationID, nil
 }
 
+func ParseBech32AddressParam(c echo.Context, prefix iotago.NetworkPrefix, paramName string) (iotago.Address, error) {
+	addressParam := strings.ToLower(c.Param(paramName))
+
+	hrp, bech32Address, err := iotago.ParseBech32(addressParam)
+	if err != nil {
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid address: %s, error: %w", addressParam, err)
+	}
+
+	if hrp != prefix {
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid bech32 address, expected prefix: %s", prefix)
+	}
+
+	return bech32Address, nil
+}
+
 func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uint64, error) {
 	intString := strings.ToLower(c.Param(paramName))
 	if intString == "" {
