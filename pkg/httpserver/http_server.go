@@ -254,9 +254,9 @@ func ParseBech32AddressQueryParam(c echo.Context, prefix iotago.NetworkPrefix, p
 func ParseCommitmentIDParam(c echo.Context, paramName string) (iotago.CommitmentID, error) {
 	commitmentIDHex := strings.ToLower(c.Param(paramName))
 
-	commitmentIDs, err := iotago.BlockIDsFromHexString([]string{commitmentIDHex})
+	commitmentIDs, err := iotago.CommitmentIDsFromHexString([]string{commitmentIDHex})
 	if err != nil {
-		return iotago.EmptyBlockID(), ierrors.Wrapf(ErrInvalidParameter, "invalid commitment ID: %s, error: %w", commitmentIDHex, err)
+		return iotago.EmptyCommitmentID, ierrors.Wrapf(ErrInvalidParameter, "invalid commitment ID: %s, error: %w", commitmentIDHex, err)
 	}
 
 	return commitmentIDs[0], nil
@@ -267,7 +267,7 @@ func ParseBlockIDParam(c echo.Context, paramName string) (iotago.BlockID, error)
 
 	blockIDs, err := iotago.BlockIDsFromHexString([]string{blockIDHex})
 	if err != nil {
-		return iotago.EmptyBlockID(), ierrors.Wrapf(ErrInvalidParameter, "invalid block ID: %s, error: %w", blockIDHex, err)
+		return iotago.EmptyBlockID, ierrors.Wrapf(ErrInvalidParameter, "invalid block ID: %s, error: %w", blockIDHex, err)
 	}
 
 	return blockIDs[0], nil
@@ -294,7 +294,7 @@ func ParseTransactionIDParam(c echo.Context, paramName string) (iotago.Transacti
 func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, error) {
 	outputIDParam := strings.ToLower(c.Param(paramName))
 
-	outputID, err := iotago.OutputIDFromHex(outputIDParam)
+	outputID, err := iotago.OutputIDFromHexString(outputIDParam)
 	if err != nil {
 		return iotago.OutputID{}, ierrors.Wrapf(ErrInvalidParameter, "invalid output ID: %s, error: %w", outputIDParam, err)
 	}
@@ -372,6 +372,21 @@ func ParseDelegationIDParam(c echo.Context, paramName string) (iotago.Delegation
 	copy(delegationID[:], delegationIDBytes)
 
 	return delegationID, nil
+}
+
+func ParseBech32AddressParam(c echo.Context, prefix iotago.NetworkPrefix, paramName string) (iotago.Address, error) {
+	addressParam := strings.ToLower(c.Param(paramName))
+
+	hrp, bech32Address, err := iotago.ParseBech32(addressParam)
+	if err != nil {
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid address: %s, error: %w", addressParam, err)
+	}
+
+	if hrp != prefix {
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "invalid bech32 address, expected prefix: %s", prefix)
+	}
+
+	return bech32Address, nil
 }
 
 func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uint64, error) {
