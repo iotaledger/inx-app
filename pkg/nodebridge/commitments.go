@@ -28,16 +28,16 @@ func commitmentFromINXCommitment(ms *inx.Commitment, api iotago.API) (*Commitmen
 	}, nil
 }
 
-func (n *NodeBridge) Commitment(ctx context.Context, index iotago.SlotIndex) (*Commitment, error) {
+func (n *NodeBridge) Commitment(ctx context.Context, slot iotago.SlotIndex) (*Commitment, error) {
 	req := &inx.CommitmentRequest{
-		CommitmentIndex: uint64(index),
+		CommitmentSlot: uint32(slot),
 	}
 	ms, err := n.client.ReadCommitment(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return commitmentFromINXCommitment(ms, n.apiProvider.APIForSlot(index))
+	return commitmentFromINXCommitment(ms, n.apiProvider.APIForSlot(slot))
 }
 
 func (n *NodeBridge) CommitmentByID(ctx context.Context, id iotago.CommitmentID) (*Commitment, error) {

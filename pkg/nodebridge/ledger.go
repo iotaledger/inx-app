@@ -27,8 +27,8 @@ type LedgerUpdate struct {
 
 func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consume func(update *LedgerUpdate) error) error {
 	req := &inx.SlotRangeRequest{
-		StartSlot: uint64(startSlot),
-		EndSlot:   uint64(endSlot),
+		StartSlot: uint32(startSlot),
+		EndSlot:   uint32(endSlot),
 	}
 
 	stream, err := n.client.ListenToLedgerUpdates(ctx, req)

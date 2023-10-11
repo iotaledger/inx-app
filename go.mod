@@ -10,8 +10,8 @@ require (
 	github.com/iotaledger/hive.go/ierrors v0.0.0-20231010133617-cdbd5387e2af
 	github.com/iotaledger/hive.go/logger v0.0.0-20231010133617-cdbd5387e2af
 	github.com/iotaledger/hive.go/runtime v0.0.0-20231010133617-cdbd5387e2af
-	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231011100123-28cd2b2657a3
-	github.com/iotaledger/iota.go/v4 v4.0.0-20231011095639-a11b6691ddab
+	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231011154428-257141868dad
+	github.com/iotaledger/iota.go/v4 v4.0.0-20231011155049-7ef680245713
 	github.com/labstack/echo/v4 v4.11.1
 	go.uber.org/dig v1.17.0
 	google.golang.org/grpc v1.58.3
