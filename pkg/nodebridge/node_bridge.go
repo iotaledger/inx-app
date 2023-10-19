@@ -96,8 +96,8 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 
 	if n.targetNetworkName != "" {
 		// we need to check for the correct target network name
-		if n.targetNetworkName != n.APIProvider().CurrentAPI().ProtocolParameters().NetworkName() {
-			return ierrors.Errorf("network name mismatch, networkName: \"%s\", targetNetworkName: \"%s\"", n.APIProvider().CurrentAPI().ProtocolParameters().NetworkName(), n.targetNetworkName)
+		if n.targetNetworkName != n.APIProvider().CommittedAPI().ProtocolParameters().NetworkName() {
+			return ierrors.Errorf("network name mismatch, networkName: \"%s\", targetNetworkName: \"%s\"", n.APIProvider().CommittedAPI().ProtocolParameters().NetworkName(), n.targetNetworkName)
 		}
 	}
 

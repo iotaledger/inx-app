@@ -28,7 +28,7 @@ func (n *NodeBridge) IsNodeHealthy() bool {
 }
 
 func (n *NodeBridge) LatestCommitment() (*iotago.Commitment, error) {
-	return n.NodeStatus().GetLatestCommitment().UnwrapCommitment(n.apiProvider.CurrentAPI())
+	return n.NodeStatus().GetLatestCommitment().UnwrapCommitment(n.apiProvider.CommittedAPI())
 }
 
 func (n *NodeBridge) LatestFinalizedCommitmentID() iotago.CommitmentID {
@@ -95,9 +95,9 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 
 	if latestCommitmentChanged {
 		slot := nodeStatus.GetLatestCommitment().CommitmentId.Unwrap().Index()
-		n.apiProvider.SetCurrentSlot(slot)
+		n.apiProvider.SetCommittedSlot(slot)
 
-		commitment, err := commitmentFromINXCommitment(nodeStatus.GetLatestCommitment(), n.apiProvider.CurrentAPI())
+		commitment, err := commitmentFromINXCommitment(nodeStatus.GetLatestCommitment(), n.apiProvider.CommittedAPI())
 		if err == nil {
 			n.Events.LatestCommittedSlotChanged.Trigger(commitment)
 		}
