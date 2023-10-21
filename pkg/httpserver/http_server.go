@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"runtime/debug"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/iotaledger/hive.go/ierrors"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/serializer/v2/serix"
 	iotago "github.com/iotaledger/iota.go/v4"
 	"github.com/iotaledger/iota.go/v4/hexutil"
 )
@@ -138,6 +140,47 @@ func GetRequestContentType(c echo.Context, supportedContentTypes ...string) (str
 
 	return "", echo.ErrUnsupportedMediaType
 }
+
+// ParseRequestByHeader parses the request based on the MIME type in the content header.
+// Supported MIME types: IOTASerializerV2, JSON
+// HINT: Do not pass pointer types, only interfaces and value types allowed.
+func ParseRequestByHeader[T any](c echo.Context, api iotago.API, binaryParserFunc func(api iotago.API, bytes []byte) (T, error)) (T, error) {
+	var obj T
+
+	mimeType, err := GetRequestContentType(c, MIMEApplicationVendorIOTASerializerV2, echo.MIMEApplicationJSON)
+	if err != nil {
+		return obj, ierrors.Join(ErrInvalidParameter, err)
+	}
+
+	if c.Request().Body == nil {
+		// bad request
+		return obj, ierrors.Wrap(ErrInvalidParameter, "error: request body missing")
+	}
+
+	bytes, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		return obj, ierrors.Wrapf(ErrInvalidParameter, "failed to read request body, error: %w", err)
+	}
+
+	switch mimeType {
+	case echo.MIMEApplicationJSON:
+		if err := api.JSONDecode(bytes, &obj, serix.WithValidation()); err != nil {
+			return obj, ierrors.Wrapf(ErrInvalidParameter, "failed to decode json data, error: %w", err)
+		}
+
+	case MIMEApplicationVendorIOTASerializerV2:
+		obj, err = binaryParserFunc(api, bytes)
+		if err != nil {
+			return obj, ierrors.Wrapf(ErrInvalidParameter, "failed to parse binary data, error: %w", err)
+		}
+
+	default:
+		return obj, echo.ErrUnsupportedMediaType
+	}
+
+	return obj, nil
+}
+
 
 func ParseBoolQueryParam(c echo.Context, paramName string) (bool, error) {
 	return strconv.ParseBool(c.QueryParam(paramName))
