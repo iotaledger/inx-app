@@ -5,6 +5,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"reflect"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -143,7 +144,6 @@ func GetRequestContentType(c echo.Context, supportedContentTypes ...string) (str
 
 // ParseRequestByHeader parses the request based on the MIME type in the content header.
 // Supported MIME types: IOTASerializerV2, JSON
-// HINT: Do not pass pointer types, only interfaces and value types allowed.
 func ParseRequestByHeader[T any](c echo.Context, apiProvider iotago.APIProvider, binaryParserFunc func(apiProvider iotago.APIProvider, bytes []byte) (T, error)) (T, error) {
 	var obj T
 
@@ -164,7 +164,17 @@ func ParseRequestByHeader[T any](c echo.Context, apiProvider iotago.APIProvider,
 
 	switch mimeType {
 	case echo.MIMEApplicationJSON:
-		if err := apiProvider.CommittedAPI().JSONDecode(bytes, &obj, serix.WithValidation()); err != nil {
+		var err error
+
+		reflectType := reflect.TypeOf(obj)
+		if reflectType != nil && reflectType.Kind() == reflect.Pointer {
+			// passed generic type is a pointer type
+			err = apiProvider.CommittedAPI().JSONDecode(bytes, obj, serix.WithValidation())
+		} else {
+			err = apiProvider.CommittedAPI().JSONDecode(bytes, &obj, serix.WithValidation())
+		}
+
+		if err != nil {
 			return obj, ierrors.Wrapf(ErrInvalidParameter, "failed to decode json data, error: %w", err)
 		}
 
