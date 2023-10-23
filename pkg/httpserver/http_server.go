@@ -143,7 +143,7 @@ func GetRequestContentType(c echo.Context, supportedContentTypes ...string) (str
 }
 
 // ParseRequestByHeader parses the request based on the MIME type in the content header.
-// Supported MIME types: IOTASerializerV2, JSON
+// Supported MIME types: IOTASerializerV2, JSON.
 func ParseRequestByHeader[T any](c echo.Context, apiProvider iotago.APIProvider, binaryParserFunc func(apiProvider iotago.APIProvider, bytes []byte) (T, error)) (T, error) {
 	var obj T
 
@@ -192,7 +192,7 @@ func ParseRequestByHeader[T any](c echo.Context, apiProvider iotago.APIProvider,
 }
 
 // SendResponseByHeader sends the response based on the MIME type in the accept header.
-// Supported MIME types: IOTASerializerV2, JSON
+// Supported MIME types: IOTASerializerV2, JSON.
 // If the MIME type is not supported, or there is none, it defaults to JSON.
 func SendResponseByHeader(c echo.Context, api iotago.API, obj any) error {
 	mimeType, err := GetAcceptHeaderContentType(c, MIMEApplicationVendorIOTASerializerV2, echo.MIMEApplicationJSON)
