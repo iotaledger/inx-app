@@ -144,7 +144,7 @@ func GetRequestContentType(c echo.Context, supportedContentTypes ...string) (str
 
 // ParseRequestByHeader parses the request based on the MIME type in the content header.
 // Supported MIME types: IOTASerializerV2, JSON.
-func ParseRequestByHeader[T any](c echo.Context, apiProvider iotago.APIProvider, binaryParserFunc func(apiProvider iotago.APIProvider, bytes []byte) (T, error)) (T, error) {
+func ParseRequestByHeader[T any](c echo.Context, api iotago.API, binaryParserFunc func(bytes []byte) (T, int, error)) (T, error) {
 	var obj T
 
 	mimeType, err := GetRequestContentType(c, MIMEApplicationVendorIOTASerializerV2, echo.MIMEApplicationJSON)
@@ -169,9 +169,9 @@ func ParseRequestByHeader[T any](c echo.Context, apiProvider iotago.APIProvider,
 		reflectType := reflect.TypeOf(obj)
 		if reflectType != nil && reflectType.Kind() == reflect.Pointer {
 			// passed generic type is a pointer type
-			err = apiProvider.CommittedAPI().JSONDecode(bytes, obj, serix.WithValidation())
+			err = api.JSONDecode(bytes, obj, serix.WithValidation())
 		} else {
-			err = apiProvider.CommittedAPI().JSONDecode(bytes, &obj, serix.WithValidation())
+			err = api.JSONDecode(bytes, &obj, serix.WithValidation())
 		}
 
 		if err != nil {
@@ -179,7 +179,7 @@ func ParseRequestByHeader[T any](c echo.Context, apiProvider iotago.APIProvider,
 		}
 
 	case MIMEApplicationVendorIOTASerializerV2:
-		obj, err = binaryParserFunc(apiProvider, bytes)
+		obj, _, err = binaryParserFunc(bytes)
 		if err != nil {
 			return obj, ierrors.Wrapf(ErrInvalidParameter, "failed to parse binary data, error: %w", err)
 		}
