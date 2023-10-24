@@ -106,3 +106,48 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 
 	return nil
 }
+
+type AcceptedTransaction struct {
+	API           iotago.API
+	Slot          iotago.SlotIndex
+	TransactionID iotago.TransactionID
+	Consumed      []*inx.LedgerSpent
+	Created       []*inx.LedgerOutput
+}
+
+func (n *NodeBridge) ListenToAcceptedTransactions(ctx context.Context, consumer func(tx *AcceptedTransaction) error) error {
+	stream, err := n.client.ListenToAcceptedTransactions(ctx, &inx.NoParams{})
+	if err != nil {
+		return err
+	}
+
+	for {
+		tx, err := stream.Recv()
+		if err != nil {
+			if ierrors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
+				break
+			}
+			n.LogErrorf("ListenToAcceptedTransactions: %s", err.Error())
+
+			break
+		}
+		if ctx.Err() != nil {
+			break
+		}
+
+		slot := iotago.SlotIndex(tx.GetSlot())
+
+		if err := consumer(&AcceptedTransaction{
+			API:           n.apiProvider.APIForSlot(slot),
+			Slot:          slot,
+			TransactionID: tx.TransactionId.Unwrap(),
+			Consumed:      tx.GetConsumed(),
+			Created:       tx.GetCreated(),
+		}); err != nil {
+			return err
+		}
+	}
+
+	//nolint:nilerr // false positive
+	return nil
+}
