@@ -12,6 +12,15 @@ import (
 	iotago "github.com/iotaledger/iota.go/v4"
 )
 
+func (n *NodeBridge) ActiveRootBlocks(ctx context.Context) (map[iotago.BlockID]iotago.CommitmentID, error) {
+	response, err := n.client.ReadActiveRootBlocks(ctx, &inx.NoParams{})
+	if err != nil {
+		return nil, err
+	}
+
+	return response.Unwrap()
+}
+
 func (n *NodeBridge) SubmitBlock(ctx context.Context, block *iotago.ProtocolBlock) (iotago.BlockID, error) {
 	blk, err := inx.WrapBlock(block)
 	if err != nil {

@@ -3,6 +3,7 @@ package nodebridge
 import (
 	"context"
 
+	"github.com/iotaledger/hive.go/lo"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
 )
@@ -26,6 +27,10 @@ func commitmentFromINXCommitment(ms *inx.Commitment, api iotago.API) (*Commitmen
 		CommitmentID: ms.GetCommitmentId().Unwrap(),
 		Commitment:   commitment,
 	}, nil
+}
+
+func (n *NodeBridge) ForceCommitUntil(ctx context.Context, slot iotago.SlotIndex) error {
+	return lo.Return2(n.client.ForceCommitUntil(ctx, inx.WrapSlotIndex(slot)))
 }
 
 func (n *NodeBridge) Commitment(ctx context.Context, slot iotago.SlotIndex) (*Commitment, error) {

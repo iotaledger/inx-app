@@ -203,6 +203,10 @@ github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231023190837-6e7b2cdfd4fd h1:hh5mAn
 github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231023190837-6e7b2cdfd4fd/go.mod h1:MK0SHfNicBmcaZb3qS3tA8NEJIWKNbcNtNNKuSDKqXY=
 github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231024101228-5d9abdd08941 h1:B0Ht9EijMtHJhbkVNEC8P5hbG3Px+/ClWVD3AKXPjSQ=
 github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231024101228-5d9abdd08941/go.mod h1:MK0SHfNicBmcaZb3qS3tA8NEJIWKNbcNtNNKuSDKqXY=
+github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231025112102-32f08b5b9296 h1:aRBqpnRY1f2FlKKtm1owD38aRKTFj8E06tNSriqQKis=
+github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231025112102-32f08b5b9296/go.mod h1:MK0SHfNicBmcaZb3qS3tA8NEJIWKNbcNtNNKuSDKqXY=
+github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231026074031-5d93e02f7777 h1:e2C37LxDRxnoDVMK8rhktxSB/dnL0AcXFLNwkArdaoo=
+github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231026074031-5d93e02f7777/go.mod h1:MK0SHfNicBmcaZb3qS3tA8NEJIWKNbcNtNNKuSDKqXY=
 github.com/iotaledger/iota.go/v4 v4.0.0-20231023190719-1a9daaa83ca8 h1:81aWESXFC04iKI9I140eDrBb9zBWXfVoAUMp9berk0c=
 github.com/iotaledger/iota.go/v4 v4.0.0-20231023190719-1a9daaa83ca8/go.mod h1:jqbLYq4a/FwuiPBqFfkAwwxU8vs3+kReRq2/tyX5qRA=
 github.com/iotaledger/iota.go/v4 v4.0.0-20231023205010-58a0b5c7fe6d h1:vGfZmcCCloTzim6TysS3fXxc9xsTfXoVB6bsedZgp7A=
