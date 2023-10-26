@@ -401,6 +401,24 @@ func ParseAccountIDParam(c echo.Context, paramName string) (iotago.AccountID, er
 	return accountID, nil
 }
 
+func ParseAnchorIDParam(c echo.Context, paramName string) (iotago.AnchorID, error) {
+	anchorID := iotago.AnchorID{}
+	anchorIDHex := strings.ToLower(c.Param(paramName))
+
+	anchorIDBytes, err := hexutil.DecodeHex(anchorIDHex)
+	if err != nil {
+		return anchorID, ierrors.Wrapf(ErrInvalidParameter, "invalid anchorID: %s, error: %w", anchorIDHex, err)
+	}
+
+	if len(anchorIDBytes) != iotago.AnchorIDLength {
+		return anchorID, ierrors.Wrapf(ErrInvalidParameter, "invalid anchorID: %s, invalid length: %d", anchorIDHex, len(anchorIDBytes))
+	}
+
+	copy(anchorID[:], anchorIDBytes)
+
+	return anchorID, nil
+}
+
 func ParseNFTIDParam(c echo.Context, paramName string) (iotago.NFTID, error) {
 	nftID := iotago.NFTID{}
 	nftIDHex := strings.ToLower(c.Param(paramName))
