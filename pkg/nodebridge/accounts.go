@@ -24,8 +24,8 @@ func (n *NodeBridge) ReadIsCommitteeMember(ctx context.Context, id iotago.Accoun
 
 	return result.GetValue(), nil
 }
-func (n *NodeBridge) ReadIsAccountValidator(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error) {
-	result, err := n.client.ReadIsAccountValidator(ctx, inx.NewAccountInfoRequest(id, slot))
+func (n *NodeBridge) ReadIsValidatorAccount(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error) {
+	result, err := n.client.ReadIsValidatorAccount(ctx, inx.NewAccountInfoRequest(id, slot))
 	if err != nil {
 		return false, err
 	}
