@@ -12,7 +12,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v4"
 )
 
-func (n *NodeBridge) SubmitBlock(ctx context.Context, block *iotago.ProtocolBlock) (iotago.BlockID, error) {
+func (n *NodeBridge) SubmitBlock(ctx context.Context, block *iotago.Block) (iotago.BlockID, error) {
 	blk, err := inx.WrapBlock(block)
 	if err != nil {
 		return iotago.BlockID{}, err
@@ -30,7 +30,7 @@ func (n *NodeBridge) BlockMetadata(ctx context.Context, blockID iotago.BlockID) 
 	return n.client.ReadBlockMetadata(ctx, inx.NewBlockId(blockID))
 }
 
-func (n *NodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago.ProtocolBlock, error) {
+func (n *NodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago.Block, error) {
 	inxMsg, err := n.client.ReadBlock(ctx, inx.NewBlockId(blockID))
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (n *NodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago
 	return inxMsg.UnwrapBlock(n.apiProvider)
 }
 
-func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFunc, consumer func(block *iotago.ProtocolBlock)) error {
+func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFunc, consumer func(block *iotago.Block)) error {
 	defer cancel()
 
 	stream, err := n.client.ListenToBlocks(ctx, &inx.NoParams{})
