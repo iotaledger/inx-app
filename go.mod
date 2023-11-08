@@ -14,7 +14,7 @@ require (
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20231108050255-98e0fa35e936
 	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231108104322-f301c3573998
 	github.com/iotaledger/iota.go/v4 v4.0.0-20231108103955-bf75d703d8aa
-	github.com/labstack/echo/v4 v4.11.2
+	github.com/labstack/echo/v4 v4.11.3
 	go.uber.org/dig v1.17.1
 	google.golang.org/grpc v1.59.0
 )
