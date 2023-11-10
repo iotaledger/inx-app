@@ -251,7 +251,7 @@ func ParseSlotQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, er
 		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
 	}
 
-	value, err := strconv.ParseUint(slotParam, 10, 64)
+	value, err := strconv.ParseUint(slotParam, 10, 32)
 	if err != nil {
 		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", slotParam, err)
 	}
@@ -266,7 +266,7 @@ func ParseEpochQueryParam(c echo.Context, paramName string) (iotago.EpochIndex, 
 		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
 	}
 
-	value, err := strconv.ParseUint(epochParam, 10, 64)
+	value, err := strconv.ParseUint(epochParam, 10, 32)
 	if err != nil {
 		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", epochParam, err)
 	}
@@ -280,16 +280,18 @@ func ParseCursorQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, 
 		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
 	}
 	cursorParts := strings.Split(cursor, ",")
-	part1, err := strconv.ParseUint(cursorParts[0], 10, 64)
+
+	slotPart, err := strconv.ParseUint(cursorParts[0], 10, 32)
 	if err != nil {
 		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, in parsing query parameter: %s error: %w", cursorParts[0], paramName, err)
 	}
-	startedAtSlot := iotago.SlotIndex(part1)
-	part2, err := strconv.ParseUint(cursorParts[1], 10, 32)
+	startedAtSlot := iotago.SlotIndex(slotPart)
+
+	indexPart, err := strconv.ParseUint(cursorParts[1], 10, 32)
 	if err != nil {
 		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, in parsing query parameter: %s error: %w", cursorParts[1], paramName, err)
 	}
-	index := uint32(part2)
+	index := uint32(indexPart)
 
 	return startedAtSlot, index, nil
 }
@@ -515,7 +517,7 @@ func ParseSlotParam(c echo.Context, paramName string) (iotago.SlotIndex, error) 
 		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
 	}
 
-	value, err := strconv.ParseUint(slotParam, 10, 64)
+	value, err := strconv.ParseUint(slotParam, 10, 32)
 	if err != nil {
 		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", slotParam, err)
 	}
@@ -530,7 +532,7 @@ func ParseEpochParam(c echo.Context, paramName string) (iotago.EpochIndex, error
 		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
 	}
 
-	value, err := strconv.ParseUint(epochParam, 10, 64)
+	value, err := strconv.ParseUint(epochParam, 10, 32)
 	if err != nil {
 		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", epochParam, err)
 	}
