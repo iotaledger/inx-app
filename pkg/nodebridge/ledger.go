@@ -58,11 +58,11 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 
 			//nolint:nosnakecase // grpc uses underscores
 			case inx.LedgerUpdate_Marker_BEGIN:
-				n.LogDebugf("BEGIN batch: %d consumed: %d, created: %d", op.BatchMarker.GetSlot(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
+				n.LogDebugf("BEGIN batch: %d consumed: %d, created: %d", op.BatchMarker.GetCommitmentId().Unwrap().Slot(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
 				if update != nil {
 					return ErrLedgerUpdateTransactionAlreadyInProgress
 				}
-				slot := iotago.SlotIndex(op.BatchMarker.GetSlot())
+				slot := op.BatchMarker.GetCommitmentId().Unwrap().Slot()
 				update = &LedgerUpdate{
 					API:      n.apiProvider.APIForSlot(slot),
 					Slot:     slot,
@@ -72,13 +72,13 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 
 			//nolint:nosnakecase // grpc uses underscores
 			case inx.LedgerUpdate_Marker_END:
-				n.LogDebugf("END batch: %d consumed: %d, created: %d", op.BatchMarker.GetSlot(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
+				n.LogDebugf("END batch: %d consumed: %d, created: %d", op.BatchMarker.GetCommitmentId().Unwrap().Slot(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
 				if update == nil {
 					return ErrLedgerUpdateInvalidOperation
 				}
 				if uint32(len(update.Consumed)) != op.BatchMarker.GetConsumedCount() ||
 					uint32(len(update.Created)) != op.BatchMarker.GetCreatedCount() ||
-					update.Slot != iotago.SlotIndex(op.BatchMarker.GetSlot()) {
+					update.Slot != op.BatchMarker.GetCommitmentId().Unwrap().Slot() {
 					return ErrLedgerUpdateEndedAbruptly
 				}
 
