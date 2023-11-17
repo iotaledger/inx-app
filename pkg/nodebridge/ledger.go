@@ -19,10 +19,10 @@ var (
 )
 
 type LedgerUpdate struct {
-	API      iotago.API
-	Slot     iotago.SlotIndex
-	Consumed []*inx.LedgerSpent
-	Created  []*inx.LedgerOutput
+	API          iotago.API
+	CommitmentID iotago.CommitmentID
+	Consumed     []*inx.LedgerSpent
+	Created      []*inx.LedgerOutput
 }
 
 func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consume func(update *LedgerUpdate) error) error {
@@ -58,27 +58,30 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 
 			//nolint:nosnakecase // grpc uses underscores
 			case inx.LedgerUpdate_Marker_BEGIN:
-				n.LogDebugf("BEGIN batch: %d consumed: %d, created: %d", op.BatchMarker.GetCommitmentId().Unwrap().Slot(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
+				commitmentID := op.BatchMarker.GetCommitmentId().Unwrap()
+				n.LogDebugf("BEGIN batch: commitmentID: %s, consumed: %d, created: %d", commitmentID, op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
 				if update != nil {
 					return ErrLedgerUpdateTransactionAlreadyInProgress
 				}
-				slot := op.BatchMarker.GetCommitmentId().Unwrap().Slot()
+
 				update = &LedgerUpdate{
-					API:      n.apiProvider.APIForSlot(slot),
-					Slot:     slot,
-					Consumed: make([]*inx.LedgerSpent, 0),
-					Created:  make([]*inx.LedgerOutput, 0),
+					API:          n.apiProvider.APIForSlot(commitmentID.Slot()),
+					CommitmentID: commitmentID,
+					Consumed:     make([]*inx.LedgerSpent, 0),
+					Created:      make([]*inx.LedgerOutput, 0),
 				}
 
 			//nolint:nosnakecase // grpc uses underscores
 			case inx.LedgerUpdate_Marker_END:
-				n.LogDebugf("END batch: %d consumed: %d, created: %d", op.BatchMarker.GetCommitmentId().Unwrap().Slot(), op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
+				commitmentID := op.BatchMarker.GetCommitmentId().Unwrap()
+				n.LogDebugf("END batch: commitmentID: %s, consumed: %d, created: %d", commitmentID, op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
 				if update == nil {
 					return ErrLedgerUpdateInvalidOperation
 				}
+
 				if uint32(len(update.Consumed)) != op.BatchMarker.GetConsumedCount() ||
 					uint32(len(update.Created)) != op.BatchMarker.GetCreatedCount() ||
-					update.Slot != op.BatchMarker.GetCommitmentId().Unwrap().Slot() {
+					update.CommitmentID != commitmentID {
 					return ErrLedgerUpdateEndedAbruptly
 				}
 
