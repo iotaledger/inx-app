@@ -32,13 +32,15 @@ type NodeBridge struct {
 	NodeConfig  *inx.NodeConfiguration
 	apiProvider *api.EpochBasedProvider
 
-	nodeStatusMutex sync.RWMutex
-	nodeStatus      *inx.NodeStatus
+	nodeStatusMutex           sync.RWMutex
+	nodeStatus                *inx.NodeStatus
+	latestCommitment          *Commitment
+	latestFinalizedCommitment *Commitment
 }
 
 type Events struct {
-	LatestCommittedSlotChanged *event.Event1[*Commitment]
-	LatestFinalizedSlotChanged *event.Event1[iotago.CommitmentID]
+	LatestCommitmentChanged          *event.Event1[*Commitment]
+	LatestFinalizedCommitmentChanged *event.Event1[*Commitment]
 }
 
 // WithTargetNetworkName checks if the network name of the node is equal to the given targetNetworkName.
@@ -54,8 +56,8 @@ func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *Node
 		WrappedLogger:     logger.NewWrappedLogger(log),
 		targetNetworkName: "",
 		Events: &Events{
-			LatestCommittedSlotChanged: event.New1[*Commitment](),
-			LatestFinalizedSlotChanged: event.New1[iotago.CommitmentID](),
+			LatestCommitmentChanged:          event.New1[*Commitment](),
+			LatestFinalizedCommitmentChanged: event.New1[*Commitment](),
 		},
 		apiProvider: api.NewEpochBasedProvider(),
 	}, opts)
@@ -85,14 +87,7 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 	}
 	n.NodeConfig = nodeConfig
 
-	for _, rawParams := range n.NodeConfig.ProtocolParameters {
-		startEpoch, protoParams, err := rawParams.Unwrap()
-		if err != nil {
-			return err
-		}
-
-		n.apiProvider.AddProtocolParametersAtEpoch(protoParams, startEpoch)
-	}
+	n.apiProvider = nodeConfig.APIProvider()
 
 	if n.targetNetworkName != "" {
 		// we need to check for the correct target network name
@@ -171,7 +166,6 @@ func (n *NodeBridge) Indexer(ctx context.Context) (nodeclient.IndexerClient, err
 // Returns ErrMQTTPluginNotAvailable if the current node does not support the plugin.
 // It retries every second until the given context is done.
 func (n *NodeBridge) EventAPI(ctx context.Context) (*nodeclient.EventAPIClient, error) {
-
 	nodeClient, err := n.INXNodeClient()
 	if err != nil {
 		return nil, err
