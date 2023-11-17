@@ -32,8 +32,10 @@ type NodeBridge struct {
 	NodeConfig  *inx.NodeConfiguration
 	apiProvider *api.EpochBasedProvider
 
-	nodeStatusMutex sync.RWMutex
-	nodeStatus      *inx.NodeStatus
+	nodeStatusMutex           sync.RWMutex
+	nodeStatus                *inx.NodeStatus
+	latestCommitment          *Commitment
+	latestFinalizedCommitment *Commitment
 }
 
 type Events struct {
@@ -164,7 +166,6 @@ func (n *NodeBridge) Indexer(ctx context.Context) (nodeclient.IndexerClient, err
 // Returns ErrMQTTPluginNotAvailable if the current node does not support the plugin.
 // It retries every second until the given context is done.
 func (n *NodeBridge) EventAPI(ctx context.Context) (*nodeclient.EventAPIClient, error) {
-
 	nodeClient, err := n.INXNodeClient()
 	if err != nil {
 		return nil, err
