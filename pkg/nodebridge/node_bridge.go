@@ -85,14 +85,7 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 	}
 	n.NodeConfig = nodeConfig
 
-	for _, rawParams := range n.NodeConfig.ProtocolParameters {
-		startEpoch, protoParams, err := rawParams.Unwrap()
-		if err != nil {
-			return err
-		}
-
-		n.apiProvider.AddProtocolParametersAtEpoch(protoParams, startEpoch)
-	}
+	n.apiProvider = nodeConfig.APIProvider()
 
 	if n.targetNetworkName != "" {
 		// we need to check for the correct target network name
