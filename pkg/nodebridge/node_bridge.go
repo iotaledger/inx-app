@@ -37,8 +37,8 @@ type NodeBridge struct {
 }
 
 type Events struct {
-	LatestCommittedSlotChanged *event.Event1[*Commitment]
-	LatestFinalizedSlotChanged *event.Event1[iotago.CommitmentID]
+	LatestCommitmentChanged          *event.Event1[*Commitment]
+	LatestFinalizedCommitmentChanged *event.Event1[*Commitment]
 }
 
 // WithTargetNetworkName checks if the network name of the node is equal to the given targetNetworkName.
@@ -54,8 +54,8 @@ func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *Node
 		WrappedLogger:     logger.NewWrappedLogger(log),
 		targetNetworkName: "",
 		Events: &Events{
-			LatestCommittedSlotChanged: event.New1[*Commitment](),
-			LatestFinalizedSlotChanged: event.New1[iotago.CommitmentID](),
+			LatestCommitmentChanged:          event.New1[*Commitment](),
+			LatestFinalizedCommitmentChanged: event.New1[*Commitment](),
 		},
 		apiProvider: api.NewEpochBasedProvider(),
 	}, opts)

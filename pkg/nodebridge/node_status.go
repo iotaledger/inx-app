@@ -73,7 +73,7 @@ func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.Canc
 
 func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 	var latestCommitmentChanged bool
-	var latestFinalizedSlotChanged bool
+	var latestFinalizedCommitmentChanged bool
 
 	updateStatus := func() error {
 		n.nodeStatusMutex.Lock()
@@ -81,8 +81,8 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 		if n.nodeStatus == nil || nodeStatus.GetLatestCommitment().GetCommitmentId().Unwrap().Index() > n.nodeStatus.GetLatestCommitment().GetCommitmentId().Unwrap().Index() {
 			latestCommitmentChanged = true
 		}
-		if n.nodeStatus == nil || nodeStatus.GetLatestFinalizedCommitmentId().Unwrap().Index() > n.nodeStatus.GetLatestFinalizedCommitmentId().Unwrap().Index() {
-			latestFinalizedSlotChanged = true
+		if n.nodeStatus == nil || nodeStatus.GetLatestFinalizedCommitment().GetCommitmentId().Unwrap().Index() > n.nodeStatus.GetLatestFinalizedCommitment().GetCommitmentId().Unwrap().Index() {
+			latestFinalizedCommitmentChanged = true
 		}
 		n.nodeStatus = nodeStatus
 
@@ -97,14 +97,15 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 		slot := nodeStatus.GetLatestCommitment().CommitmentId.Unwrap().Index()
 		n.apiProvider.SetCommittedSlot(slot)
 
-		commitment, err := commitmentFromINXCommitment(nodeStatus.GetLatestCommitment(), n.apiProvider.CommittedAPI())
-		if err == nil {
-			n.Events.LatestCommittedSlotChanged.Trigger(commitment)
+		if commitment, err := commitmentFromINXCommitment(nodeStatus.GetLatestCommitment(), n.apiProvider.CommittedAPI()); err == nil {
+			n.Events.LatestCommitmentChanged.Trigger(commitment)
 		}
 	}
 
-	if latestFinalizedSlotChanged {
-		n.Events.LatestFinalizedSlotChanged.Trigger(nodeStatus.LatestFinalizedCommitmentId.Unwrap())
+	if latestFinalizedCommitmentChanged {
+		if commitment, err := commitmentFromINXCommitment(nodeStatus.GetLatestFinalizedCommitment(), n.apiProvider.CommittedAPI()); err == nil {
+			n.Events.LatestFinalizedCommitmentChanged.Trigger(commitment)
+		}
 	}
 
 	return nil
