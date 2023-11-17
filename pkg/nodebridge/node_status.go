@@ -31,8 +31,8 @@ func (n *NodeBridge) LatestCommitment() (*iotago.Commitment, error) {
 	return n.NodeStatus().GetLatestCommitment().UnwrapCommitment(n.apiProvider.CommittedAPI())
 }
 
-func (n *NodeBridge) LatestFinalizedCommitmentID() iotago.CommitmentID {
-	return n.NodeStatus().GetLatestFinalizedCommitmentId().Unwrap()
+func (n *NodeBridge) LatestFinalizedCommitment() (*iotago.Commitment, error) {
+	return n.NodeStatus().GetLatestFinalizedCommitment().UnwrapCommitment(n.apiProvider.CommittedAPI())
 }
 
 func (n *NodeBridge) PruningEpoch() iotago.EpochIndex {
