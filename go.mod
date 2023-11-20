@@ -6,14 +6,14 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/iotaledger/hive.go/app v0.0.0-20231110120127-f90b276b7c05
+	github.com/iotaledger/hive.go/app v0.0.0-20231113110812-4ca2b6cc9a42
 	github.com/iotaledger/hive.go/ierrors v0.0.0-20231113110812-4ca2b6cc9a42
 	github.com/iotaledger/hive.go/lo v0.0.0-20231113110812-4ca2b6cc9a42
-	github.com/iotaledger/hive.go/logger v0.0.0-20231110120127-f90b276b7c05
+	github.com/iotaledger/hive.go/logger v0.0.0-20231113110812-4ca2b6cc9a42
 	github.com/iotaledger/hive.go/runtime v0.0.0-20231113110812-4ca2b6cc9a42
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20231113110812-4ca2b6cc9a42
-	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231117165303-4e4c9d0ee087
-	github.com/iotaledger/iota.go/v4 v4.0.0-20231117155557-c2903737fac0
+	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231120082637-ccd5b8465251
+	github.com/iotaledger/iota.go/v4 v4.0.0-20231120063545-80c263f28140
 	github.com/labstack/echo/v4 v4.11.3
 	go.uber.org/dig v1.17.1
 	google.golang.org/grpc v1.59.0
@@ -38,9 +38,9 @@ require (
 	github.com/holiman/uint256 v1.2.3 // indirect
 	github.com/iancoleman/orderedmap v0.3.0 // indirect
 	github.com/iotaledger/hive.go/constraints v0.0.0-20231113110812-4ca2b6cc9a42 // indirect
-	github.com/iotaledger/hive.go/core v1.0.0-rc.3.0.20231110120127-f90b276b7c05 // indirect
+	github.com/iotaledger/hive.go/core v1.0.0-rc.3.0.20231113110812-4ca2b6cc9a42 // indirect
 	github.com/iotaledger/hive.go/crypto v0.0.0-20231113110812-4ca2b6cc9a42 // indirect
-	github.com/iotaledger/hive.go/ds v0.0.0-20231110120127-f90b276b7c05 // indirect
+	github.com/iotaledger/hive.go/ds v0.0.0-20231113110812-4ca2b6cc9a42 // indirect
 	github.com/iotaledger/hive.go/stringify v0.0.0-20231113110812-4ca2b6cc9a42 // indirect
 	github.com/knadh/koanf v1.5.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
