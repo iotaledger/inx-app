@@ -1,11 +1,8 @@
+//nolint:nosnakecase // grpc uses underscores
 package nodebridge
 
 import (
 	"context"
-	"io"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/iotaledger/hive.go/ierrors"
 	inx "github.com/iotaledger/inx/go"
@@ -37,26 +34,12 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 	}
 
 	var update *LedgerUpdate
-	for {
-		payload, err := stream.Recv()
-		if ierrors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
-			break
-		}
-		if ctx.Err() != nil {
-			// context got canceled, so stop the updates
-			//nolint:nilerr // false positive
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-
+	if err := ListenToStream(ctx, stream.Recv, func(payload *inx.LedgerUpdate) error {
 		switch op := payload.GetOp().(type) {
-		//nolint:nosnakecase // grpc uses underscores
+
 		case *inx.LedgerUpdate_BatchMarker:
 			switch op.BatchMarker.GetMarkerType() {
 
-			//nolint:nosnakecase // grpc uses underscores
 			case inx.LedgerUpdate_Marker_BEGIN:
 				commitmentID := op.BatchMarker.GetCommitmentId().Unwrap()
 				n.LogDebugf("BEGIN batch: commitmentID: %s, consumed: %d, created: %d", commitmentID, op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
@@ -71,7 +54,6 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 					Created:      make([]*inx.LedgerOutput, 0),
 				}
 
-			//nolint:nosnakecase // grpc uses underscores
 			case inx.LedgerUpdate_Marker_END:
 				commitmentID := op.BatchMarker.GetCommitmentId().Unwrap()
 				n.LogDebugf("END batch: commitmentID: %s, consumed: %d, created: %d", commitmentID, op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
@@ -91,20 +73,23 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 				update = nil
 			}
 
-		//nolint:nosnakecase // grpc uses underscores
 		case *inx.LedgerUpdate_Consumed:
 			if update == nil {
 				return ErrLedgerUpdateInvalidOperation
 			}
 			update.Consumed = append(update.Consumed, op.Consumed)
 
-		//nolint:nosnakecase // grpc uses underscores
 		case *inx.LedgerUpdate_Created:
 			if update == nil {
 				return ErrLedgerUpdateInvalidOperation
 			}
 			update.Created = append(update.Created, op.Created)
 		}
+
+		return nil
+	}); err != nil {
+		n.LogErrorf("ListenToLedgerUpdates failed: %s", err.Error())
+		return err
 	}
 
 	return nil
@@ -124,33 +109,20 @@ func (n *NodeBridge) ListenToAcceptedTransactions(ctx context.Context, consumer 
 		return err
 	}
 
-	for {
-		tx, err := stream.Recv()
-		if err != nil {
-			if ierrors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
-				break
-			}
-			n.LogErrorf("ListenToAcceptedTransactions: %s", err.Error())
-
-			break
-		}
-		if ctx.Err() != nil {
-			break
-		}
-
+	if err := ListenToStream(ctx, stream.Recv, func(tx *inx.AcceptedTransaction) error {
 		slot := iotago.SlotIndex(tx.GetSlot())
 
-		if err := consumer(&AcceptedTransaction{
+		return consumer(&AcceptedTransaction{
 			API:           n.apiProvider.APIForSlot(slot),
 			Slot:          slot,
 			TransactionID: tx.TransactionId.Unwrap(),
 			Consumed:      tx.GetConsumed(),
 			Created:       tx.GetCreated(),
-		}); err != nil {
-			return err
-		}
+		})
+	}); err != nil {
+		n.LogErrorf("ListenToAcceptedTransactions failed: %s", err.Error())
+		return err
 	}
 
-	//nolint:nilerr // false positive
 	return nil
 }

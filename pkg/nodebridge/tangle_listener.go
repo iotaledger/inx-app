@@ -180,20 +180,14 @@ func (t *TangleListener) listenToSolidBlocks(ctx context.Context, cancel context
 		return err
 	}
 
-	// receive until the context is canceled
-	for ctx.Err() == nil {
-		metadata, err := stream.Recv()
-		if err != nil {
-			if ierrors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
-				break
-			}
-
-			return err
-		}
-
+	if err := ListenToStream(ctx, stream.Recv, func(metadata *inx.BlockMetadata) error {
 		t.triggerBlockSolidCallback(metadata)
 		t.blockSolidNotifier.Notify(metadata.GetBlockId().Unwrap())
 		t.Events.BlockSolid.Trigger(metadata)
+		return nil
+	}); err != nil {
+		n.LogErrorf("listenToSolidBlocks failed: %s", err.Error())
+		return err
 	}
 
 	return nil

@@ -2,12 +2,7 @@ package nodebridge
 
 import (
 	"context"
-	"io"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	"github.com/iotaledger/hive.go/ierrors"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
 )
@@ -56,23 +51,13 @@ func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFu
 		return err
 	}
 
-	for {
-		block, err := stream.Recv()
-		if err != nil {
-			if ierrors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
-				break
-			}
-			n.LogErrorf("ListenToBlocks: %s", err.Error())
-
-			break
-		}
-		if ctx.Err() != nil {
-			break
-		}
-
+	if err := ListenToStream(ctx, stream.Recv, func(block *inx.Block) error {
 		consumer(block.MustUnwrapBlock(n.apiProvider))
+		return nil
+	}); err != nil {
+		n.LogErrorf("ListenToBlocks failed: %s", err.Error())
+		return err
 	}
 
-	//nolint:nilerr // false positive
 	return nil
 }
