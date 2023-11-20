@@ -2,12 +2,7 @@ package nodebridge
 
 import (
 	"context"
-	"io"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
-	"github.com/iotaledger/hive.go/ierrors"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
 )
@@ -53,27 +48,11 @@ func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.Canc
 		return err
 	}
 
-	for {
-		nodeStatus, err := stream.Recv()
-		if err != nil {
-			if ierrors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
-				break
-			}
-			n.LogErrorf("listenToNodeStatus: %s", err.Error())
-
-			break
-		}
-		if ctx.Err() != nil {
-			break
-		}
-
-		if err := n.processNodeStatus(nodeStatus); err != nil {
-			n.LogErrorf("processNodeStatus: %s", err.Error())
-			break
-		}
+	if err := ListenToStream(ctx, stream.Recv, n.processNodeStatus); err != nil {
+		n.LogErrorf("listenToNodeStatus failed: %s", err.Error())
+		return err
 	}
 
-	//nolint:nilerr // false positive
 	return nil
 }
 

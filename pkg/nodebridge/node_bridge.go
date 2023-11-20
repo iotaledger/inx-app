@@ -2,13 +2,16 @@ package nodebridge
 
 import (
 	"context"
+	"io"
 	"sync"
 	"time"
 
 	grpcretry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	grpcprometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 
 	"github.com/iotaledger/hive.go/ierrors"
 	"github.com/iotaledger/hive.go/logger"
@@ -194,4 +197,30 @@ func (n *NodeBridge) EventAPI(ctx context.Context) (*nodeclient.EventAPIClient, 
 	}
 
 	return nil, nodeclient.ErrMQTTPluginNotAvailable
+}
+
+func ListenToStream[K any](ctx context.Context, receiverFunc func() (K, error), consumerFunc func(K) error) error {
+	for {
+		item, err := receiverFunc()
+		if err != nil {
+			if ierrors.Is(err, io.EOF) || status.Code(err) == codes.Canceled {
+				// the stream was closed
+				break
+			}
+
+			return err
+		}
+
+		if ctx.Err() != nil {
+			// the context was canceled
+			break
+		}
+
+		if err := consumerFunc(item); err != nil {
+			return err
+		}
+	}
+
+	//nolint:nilerr // false positive
+	return nil
 }
