@@ -334,15 +334,30 @@ func ParseBech32AddressQueryParam(c echo.Context, prefix iotago.NetworkPrefix, p
 	return bech32Address, nil
 }
 
-func ParseCommitmentIDParam(c echo.Context, paramName string) (iotago.CommitmentID, error) {
-	commitmentIDHex := strings.ToLower(c.Param(paramName))
+func ParseCommitmentIDQueryParam(c echo.Context, paramName string) (iotago.CommitmentID, error) {
+	commitmentIDHex := strings.ToLower(c.QueryParam(paramName))
 
-	commitmentIDs, err := iotago.CommitmentIDsFromHexString([]string{commitmentIDHex})
+	if len(commitmentIDHex) == 0 {
+		return iotago.EmptyCommitmentID, nil
+	}
+
+	commitmentID, err := iotago.CommitmentIDFromHexString(commitmentIDHex)
 	if err != nil {
 		return iotago.EmptyCommitmentID, ierrors.Wrapf(ErrInvalidParameter, "invalid commitment ID: %s, error: %w", commitmentIDHex, err)
 	}
 
-	return commitmentIDs[0], nil
+	return commitmentID, nil
+}
+
+func ParseCommitmentIDParam(c echo.Context, paramName string) (iotago.CommitmentID, error) {
+	commitmentIDHex := strings.ToLower(c.Param(paramName))
+
+	commitmentID, err := iotago.CommitmentIDFromHexString(commitmentIDHex)
+	if err != nil {
+		return iotago.EmptyCommitmentID, ierrors.Wrapf(ErrInvalidParameter, "invalid commitment ID: %s, error: %w", commitmentIDHex, err)
+	}
+
+	return commitmentID, nil
 }
 
 func ParseBlockIDParam(c echo.Context, paramName string) (iotago.BlockID, error) {
