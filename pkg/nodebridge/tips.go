@@ -8,7 +8,7 @@ import (
 )
 
 // RequestTips requests tips.
-func (n *NodeBridge) RequestTips(ctx context.Context, count uint32) (strong iotago.BlockIDs, weak iotago.BlockIDs, shallowLike iotago.BlockIDs, err error) {
+func (n *nodeBridge) RequestTips(ctx context.Context, count uint32) (strong iotago.BlockIDs, weak iotago.BlockIDs, shallowLike iotago.BlockIDs, err error) {
 	tipsResponse, err := n.client.RequestTips(ctx, &inx.TipsRequest{Count: count})
 	if err != nil {
 		return nil, nil, nil, err

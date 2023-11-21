@@ -8,7 +8,7 @@ import (
 )
 
 // ActiveRootBlocks returns the active root blocks.
-func (n *NodeBridge) ActiveRootBlocks(ctx context.Context) (map[iotago.BlockID]iotago.CommitmentID, error) {
+func (n *nodeBridge) ActiveRootBlocks(ctx context.Context) (map[iotago.BlockID]iotago.CommitmentID, error) {
 	response, err := n.client.ReadActiveRootBlocks(ctx, &inx.NoParams{})
 	if err != nil {
 		return nil, err
@@ -18,7 +18,7 @@ func (n *NodeBridge) ActiveRootBlocks(ctx context.Context) (map[iotago.BlockID]i
 }
 
 // SubmitBlock submits the given block.
-func (n *NodeBridge) SubmitBlock(ctx context.Context, block *iotago.Block) (iotago.BlockID, error) {
+func (n *nodeBridge) SubmitBlock(ctx context.Context, block *iotago.Block) (iotago.BlockID, error) {
 	blk, err := inx.WrapBlock(block)
 	if err != nil {
 		return iotago.BlockID{}, err
@@ -33,12 +33,12 @@ func (n *NodeBridge) SubmitBlock(ctx context.Context, block *iotago.Block) (iota
 }
 
 // BlockMetadata returns the block metadata for the given block ID.
-func (n *NodeBridge) BlockMetadata(ctx context.Context, blockID iotago.BlockID) (*inx.BlockMetadata, error) {
+func (n *nodeBridge) BlockMetadata(ctx context.Context, blockID iotago.BlockID) (*inx.BlockMetadata, error) {
 	return n.client.ReadBlockMetadata(ctx, inx.NewBlockId(blockID))
 }
 
 // Block returns the block for the given block ID.
-func (n *NodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago.Block, error) {
+func (n *nodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago.Block, error) {
 	inxMsg, err := n.client.ReadBlock(ctx, inx.NewBlockId(blockID))
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (n *NodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago
 }
 
 // ListenToBlocks listens to blocks.
-func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFunc, consumer func(block *iotago.Block)) error {
+func (n *nodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFunc, consumer func(block *iotago.Block)) error {
 	defer cancel()
 
 	stream, err := n.client.ListenToBlocks(ctx, &inx.NoParams{})

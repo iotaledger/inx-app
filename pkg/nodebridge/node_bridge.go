@@ -22,7 +22,79 @@ import (
 	"github.com/iotaledger/iota.go/v4/nodeclient"
 )
 
-type NodeBridge struct {
+type NodeBridge interface {
+	// Events returns the events.
+	Events() *Events
+	// Connect connects to the given address and reads the node configuration.
+	Connect(ctx context.Context, address string, maxConnectionAttempts uint) error
+	// Run starts the node bridge.
+	Run(ctx context.Context)
+	// Client returns the INXClient.
+	Client() inx.INXClient
+	// APIProvider returns the APIProvider.
+	APIProvider() iotago.APIProvider
+	// INXNodeClient returns the NodeClient.
+	INXNodeClient() (*nodeclient.Client, error)
+	// Indexer returns the IndexerClient.
+	// Returns ErrIndexerPluginNotAvailable if the current node does not support the plugin.
+	Indexer(ctx context.Context) (nodeclient.IndexerClient, error)
+	// EventAPI returns the EventAPIClient if supported by the node.
+	// Returns ErrMQTTPluginNotAvailable if the current node does not support the plugin.
+	EventAPI(ctx context.Context) (*nodeclient.EventAPIClient, error)
+
+	// ReadIsCandidate returns true if the given account is a candidate.
+	ReadIsCandidate(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error)
+	// ReadIsCommitteeMember returns true if the given account is a committee member.
+	ReadIsCommitteeMember(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error)
+	// ReadIsValidatorAccount returns true if the given account is a validator account.
+	ReadIsValidatorAccount(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error)
+
+	// RegisterAPIRoute registers the given API route.
+	RegisterAPIRoute(ctx context.Context, route string, bindAddress string, path string) error
+	// UnregisterAPIRoute unregisters the given API route.
+	UnregisterAPIRoute(ctx context.Context, route string) error
+
+	// ActiveRootBlocks returns the active root blocks.
+	ActiveRootBlocks(ctx context.Context) (map[iotago.BlockID]iotago.CommitmentID, error)
+	// SubmitBlock submits the given block.
+	SubmitBlock(ctx context.Context, block *iotago.Block) (iotago.BlockID, error)
+	// BlockMetadata returns the block metadata for the given block ID.
+	BlockMetadata(ctx context.Context, blockID iotago.BlockID) (*inx.BlockMetadata, error)
+	// Block returns the block for the given block ID.
+	Block(ctx context.Context, blockID iotago.BlockID) (*iotago.Block, error)
+	// ListenToBlocks listens to blocks.
+	ListenToBlocks(ctx context.Context, cancel context.CancelFunc, consumer func(block *iotago.Block)) error
+
+	// ForceCommitUntil forces the node to commit until the given slot.
+	ForceCommitUntil(ctx context.Context, slot iotago.SlotIndex) error
+	// Commitment returns the commitment for the given slot.
+	Commitment(ctx context.Context, slot iotago.SlotIndex) (*Commitment, error)
+	// CommitmentByID returns the commitment for the given commitment ID.
+	CommitmentByID(ctx context.Context, id iotago.CommitmentID) (*Commitment, error)
+
+	// ListenToLedgerUpdates listens to ledger updates.
+	ListenToLedgerUpdates(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consume func(update *LedgerUpdate) error) error
+	// ListenToAcceptedTransactions listens to accepted transactions.
+	ListenToAcceptedTransactions(ctx context.Context, consumer func(tx *AcceptedTransaction) error) error
+
+	// NodeStatus returns the current node status.
+	NodeStatus() *inx.NodeStatus
+	// IsNodeHealthy returns true if the node is healthy.
+	IsNodeHealthy() bool
+	// LatestCommitment returns the latest commitment.
+	LatestCommitment() *Commitment
+	// LatestFinalizedCommitment returns the latest finalized commitment.
+	LatestFinalizedCommitment() *Commitment
+	// PruningEpoch returns the pruning epoch.
+	PruningEpoch() iotago.EpochIndex
+
+	// RequestTips requests tips.
+	RequestTips(ctx context.Context, count uint32) (strong iotago.BlockIDs, weak iotago.BlockIDs, shallowLike iotago.BlockIDs, err error)
+}
+
+var _ NodeBridge = &nodeBridge{}
+
+type nodeBridge struct {
 	// the logger used to log events.
 	*logger.WrappedLogger
 
@@ -47,14 +119,14 @@ type Events struct {
 
 // WithTargetNetworkName checks if the network name of the node is equal to the given targetNetworkName.
 // If targetNetworkName is empty, the check is disabled.
-func WithTargetNetworkName(targetNetworkName string) options.Option[NodeBridge] {
-	return func(n *NodeBridge) {
+func WithTargetNetworkName(targetNetworkName string) options.Option[nodeBridge] {
+	return func(n *nodeBridge) {
 		n.targetNetworkName = targetNetworkName
 	}
 }
 
-func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *NodeBridge {
-	return options.Apply(&NodeBridge{
+func New(log *logger.Logger, opts ...options.Option[nodeBridge]) NodeBridge {
+	return options.Apply(&nodeBridge{
 		WrappedLogger:     logger.NewWrappedLogger(log),
 		targetNetworkName: "",
 		events: &Events{
@@ -66,12 +138,12 @@ func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *Node
 }
 
 // Events returns the events.
-func (n *NodeBridge) Events() *Events {
+func (n *nodeBridge) Events() *Events {
 	return n.events
 }
 
 // Connect connects to the given address and reads the node configuration.
-func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionAttempts uint) error {
+func (n *nodeBridge) Connect(ctx context.Context, address string, maxConnectionAttempts uint) error {
 	conn, err := grpc.Dial(address,
 		grpc.WithChainUnaryInterceptor(grpcretry.UnaryClientInterceptor(), grpcprometheus.UnaryClientInterceptor),
 		grpc.WithStreamInterceptor(grpcprometheus.StreamClientInterceptor),
@@ -114,7 +186,7 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 }
 
 // Run starts the node bridge.
-func (n *NodeBridge) Run(ctx context.Context) {
+func (n *nodeBridge) Run(ctx context.Context) {
 	c, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -129,24 +201,24 @@ func (n *NodeBridge) Run(ctx context.Context) {
 }
 
 // Client returns the INXClient.
-func (n *NodeBridge) Client() inx.INXClient {
+func (n *nodeBridge) Client() inx.INXClient {
 	return n.client
 }
 
 // APIProvider returns the APIProvider.
-func (n *NodeBridge) APIProvider() iotago.APIProvider {
+func (n *nodeBridge) APIProvider() iotago.APIProvider {
 	return n.apiProvider
 }
 
 // INXNodeClient returns the NodeClient.
-func (n *NodeBridge) INXNodeClient() (*nodeclient.Client, error) {
+func (n *nodeBridge) INXNodeClient() (*nodeclient.Client, error) {
 	return inx.NewNodeclientOverINX(n.client)
 }
 
 // Indexer returns the IndexerClient.
 // Returns ErrIndexerPluginNotAvailable if the current node does not support the plugin.
 // It retries every second until the given context is done.
-func (n *NodeBridge) Indexer(ctx context.Context) (nodeclient.IndexerClient, error) {
+func (n *nodeBridge) Indexer(ctx context.Context) (nodeclient.IndexerClient, error) {
 
 	nodeClient, err := n.INXNodeClient()
 	if err != nil {
@@ -181,7 +253,7 @@ func (n *NodeBridge) Indexer(ctx context.Context) (nodeclient.IndexerClient, err
 // EventAPI returns the EventAPIClient if supported by the node.
 // Returns ErrMQTTPluginNotAvailable if the current node does not support the plugin.
 // It retries every second until the given context is done.
-func (n *NodeBridge) EventAPI(ctx context.Context) (*nodeclient.EventAPIClient, error) {
+func (n *nodeBridge) EventAPI(ctx context.Context) (*nodeclient.EventAPIClient, error) {
 	nodeClient, err := n.INXNodeClient()
 	if err != nil {
 		return nil, err

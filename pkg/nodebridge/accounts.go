@@ -8,7 +8,7 @@ import (
 )
 
 // ReadIsCandidate returns true if the given account is a candidate.
-func (n *NodeBridge) ReadIsCandidate(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error) {
+func (n *nodeBridge) ReadIsCandidate(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error) {
 	result, err := n.client.ReadIsCandidate(ctx, inx.NewAccountInfoRequest(id, slot))
 	if err != nil {
 		return false, err
@@ -18,7 +18,7 @@ func (n *NodeBridge) ReadIsCandidate(ctx context.Context, id iotago.AccountID, s
 }
 
 // ReadIsCommitteeMember returns true if the given account is a committee member.
-func (n *NodeBridge) ReadIsCommitteeMember(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error) {
+func (n *nodeBridge) ReadIsCommitteeMember(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error) {
 	result, err := n.client.ReadIsCommitteeMember(ctx, inx.NewAccountInfoRequest(id, slot))
 	if err != nil {
 		return false, err
@@ -28,7 +28,7 @@ func (n *NodeBridge) ReadIsCommitteeMember(ctx context.Context, id iotago.Accoun
 }
 
 // ReadIsValidatorAccount returns true if the given account is a validator account.
-func (n *NodeBridge) ReadIsValidatorAccount(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error) {
+func (n *nodeBridge) ReadIsValidatorAccount(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error) {
 	result, err := n.client.ReadIsValidatorAccount(ctx, inx.NewAccountInfoRequest(id, slot))
 	if err != nil {
 		return false, err

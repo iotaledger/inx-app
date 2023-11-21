@@ -12,7 +12,7 @@ const (
 )
 
 // NodeStatus returns the current node status.
-func (n *NodeBridge) NodeStatus() *inx.NodeStatus {
+func (n *nodeBridge) NodeStatus() *inx.NodeStatus {
 	n.nodeStatusMutex.RLock()
 	defer n.nodeStatusMutex.RUnlock()
 
@@ -20,12 +20,12 @@ func (n *NodeBridge) NodeStatus() *inx.NodeStatus {
 }
 
 // IsNodeHealthy returns true if the node is healthy.
-func (n *NodeBridge) IsNodeHealthy() bool {
+func (n *nodeBridge) IsNodeHealthy() bool {
 	return n.NodeStatus().GetIsHealthy()
 }
 
 // LatestCommitment returns the latest commitment.
-func (n *NodeBridge) LatestCommitment() *Commitment {
+func (n *nodeBridge) LatestCommitment() *Commitment {
 	n.nodeStatusMutex.RLock()
 	defer n.nodeStatusMutex.RUnlock()
 
@@ -33,7 +33,7 @@ func (n *NodeBridge) LatestCommitment() *Commitment {
 }
 
 // LatestFinalizedCommitment returns the latest finalized commitment.
-func (n *NodeBridge) LatestFinalizedCommitment() *Commitment {
+func (n *nodeBridge) LatestFinalizedCommitment() *Commitment {
 	n.nodeStatusMutex.RLock()
 	defer n.nodeStatusMutex.RUnlock()
 
@@ -41,11 +41,11 @@ func (n *NodeBridge) LatestFinalizedCommitment() *Commitment {
 }
 
 // PruningEpoch returns the pruning epoch.
-func (n *NodeBridge) PruningEpoch() iotago.EpochIndex {
+func (n *nodeBridge) PruningEpoch() iotago.EpochIndex {
 	return iotago.EpochIndex(n.NodeStatus().GetPruningEpoch())
 }
 
-func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.CancelFunc) error {
+func (n *nodeBridge) listenToNodeStatus(ctx context.Context, cancel context.CancelFunc) error {
 	defer cancel()
 
 	stream, err := n.client.ListenToNodeStatus(ctx, &inx.NodeStatusRequest{CooldownInMilliseconds: ListenToNodeStatusCooldownInMilliseconds})
@@ -61,7 +61,7 @@ func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.Canc
 	return nil
 }
 
-func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
+func (n *nodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 
 	var latestCommitment *Commitment
 	var latestCommitmentChanged bool

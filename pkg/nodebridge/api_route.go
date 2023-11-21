@@ -10,7 +10,7 @@ import (
 )
 
 // RegisterAPIRoute registers the given API route.
-func (n *NodeBridge) RegisterAPIRoute(ctx context.Context, route string, bindAddress string, path string) error {
+func (n *nodeBridge) RegisterAPIRoute(ctx context.Context, route string, bindAddress string, path string) error {
 	bindAddressParts := strings.Split(bindAddress, ":")
 	if len(bindAddressParts) != 2 {
 		return ierrors.Errorf("invalid address %s", bindAddress)
@@ -36,7 +36,7 @@ func (n *NodeBridge) RegisterAPIRoute(ctx context.Context, route string, bindAdd
 }
 
 // UnregisterAPIRoute unregisters the given API route.
-func (n *NodeBridge) UnregisterAPIRoute(ctx context.Context, route string) error {
+func (n *nodeBridge) UnregisterAPIRoute(ctx context.Context, route string) error {
 	apiReq := &inx.APIRouteRequest{
 		Route: route,
 	}
