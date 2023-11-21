@@ -94,11 +94,11 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 		slot := latestCommitment.CommitmentID.Slot()
 		n.apiProvider.SetCommittedSlot(slot)
 
-		n.Events.LatestCommitmentChanged.Trigger(latestCommitment)
+		n.events.LatestCommitmentChanged.Trigger(latestCommitment)
 	}
 
 	if latestFinalizedCommitmentChanged {
-		n.Events.LatestFinalizedCommitmentChanged.Trigger(latestFinalizedCommitment)
+		n.events.LatestFinalizedCommitmentChanged.Trigger(latestFinalizedCommitment)
 	}
 
 	return nil

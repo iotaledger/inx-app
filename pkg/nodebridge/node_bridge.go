@@ -27,7 +27,7 @@ type NodeBridge struct {
 	*logger.WrappedLogger
 
 	targetNetworkName string
-	Events            *Events
+	events            *Events
 
 	conn        *grpc.ClientConn
 	client      inx.INXClient
@@ -57,12 +57,16 @@ func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *Node
 	return options.Apply(&NodeBridge{
 		WrappedLogger:     logger.NewWrappedLogger(log),
 		targetNetworkName: "",
-		Events: &Events{
+		events: &Events{
 			LatestCommitmentChanged:          event.New1[*Commitment](),
 			LatestFinalizedCommitmentChanged: event.New1[*Commitment](),
 		},
 		apiProvider: iotago.NewEpochBasedProvider(),
 	}, opts)
+}
+
+func (n *NodeBridge) Events() *Events {
+	return n.events
 }
 
 func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionAttempts uint) error {
