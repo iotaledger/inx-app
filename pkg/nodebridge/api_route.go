@@ -7,13 +7,9 @@ import (
 
 	"github.com/iotaledger/hive.go/ierrors"
 	inx "github.com/iotaledger/inx/go"
-	"github.com/iotaledger/iota.go/v4/nodeclient"
 )
 
-func (n *NodeBridge) INXNodeClient() (*nodeclient.Client, error) {
-	return inx.NewNodeclientOverINX(n.client)
-}
-
+// RegisterAPIRoute registers the given API route.
 func (n *NodeBridge) RegisterAPIRoute(ctx context.Context, route string, bindAddress string, path string) error {
 	bindAddressParts := strings.Split(bindAddress, ":")
 	if len(bindAddressParts) != 2 {
@@ -39,6 +35,7 @@ func (n *NodeBridge) RegisterAPIRoute(ctx context.Context, route string, bindAdd
 	return err
 }
 
+// UnregisterAPIRoute unregisters the given API route.
 func (n *NodeBridge) UnregisterAPIRoute(ctx context.Context, route string) error {
 	apiReq := &inx.APIRouteRequest{
 		Route: route,

@@ -7,6 +7,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v4"
 )
 
+// ReadIsCandidate returns true if the given account is a candidate.
 func (n *NodeBridge) ReadIsCandidate(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error) {
 	result, err := n.client.ReadIsCandidate(ctx, inx.NewAccountInfoRequest(id, slot))
 	if err != nil {
@@ -16,6 +17,7 @@ func (n *NodeBridge) ReadIsCandidate(ctx context.Context, id iotago.AccountID, s
 	return result.GetValue(), nil
 }
 
+// ReadIsCommitteeMember returns true if the given account is a committee member.
 func (n *NodeBridge) ReadIsCommitteeMember(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error) {
 	result, err := n.client.ReadIsCommitteeMember(ctx, inx.NewAccountInfoRequest(id, slot))
 	if err != nil {
@@ -24,6 +26,8 @@ func (n *NodeBridge) ReadIsCommitteeMember(ctx context.Context, id iotago.Accoun
 
 	return result.GetValue(), nil
 }
+
+// ReadIsValidatorAccount returns true if the given account is a validator account.
 func (n *NodeBridge) ReadIsValidatorAccount(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error) {
 	result, err := n.client.ReadIsValidatorAccount(ctx, inx.NewAccountInfoRequest(id, slot))
 	if err != nil {

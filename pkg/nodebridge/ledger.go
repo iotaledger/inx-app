@@ -22,6 +22,7 @@ type LedgerUpdate struct {
 	Created      []*inx.LedgerOutput
 }
 
+// ListenToLedgerUpdates listens to ledger updates.
 func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consume func(update *LedgerUpdate) error) error {
 	req := &inx.SlotRangeRequest{
 		StartSlot: uint32(startSlot),
@@ -103,6 +104,7 @@ type AcceptedTransaction struct {
 	Created       []*inx.LedgerOutput
 }
 
+// ListenToAcceptedTransactions listens to accepted transactions.
 func (n *NodeBridge) ListenToAcceptedTransactions(ctx context.Context, consumer func(tx *AcceptedTransaction) error) error {
 	stream, err := n.client.ListenToAcceptedTransactions(ctx, &inx.NoParams{})
 	if err != nil {

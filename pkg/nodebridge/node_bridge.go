@@ -65,10 +65,12 @@ func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *Node
 	}, opts)
 }
 
+// Events returns the events.
 func (n *NodeBridge) Events() *Events {
 	return n.events
 }
 
+// Connect connects to the given address and reads the node configuration.
 func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionAttempts uint) error {
 	conn, err := grpc.Dial(address,
 		grpc.WithChainUnaryInterceptor(grpcretry.UnaryClientInterceptor(), grpcprometheus.UnaryClientInterceptor),
@@ -111,6 +113,7 @@ func (n *NodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 	return n.processNodeStatus(nodeStatus)
 }
 
+// Run starts the node bridge.
 func (n *NodeBridge) Run(ctx context.Context) {
 	c, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -125,12 +128,19 @@ func (n *NodeBridge) Run(ctx context.Context) {
 	_ = n.conn.Close()
 }
 
+// Client returns the INXClient.
 func (n *NodeBridge) Client() inx.INXClient {
 	return n.client
 }
 
+// APIProvider returns the APIProvider.
 func (n *NodeBridge) APIProvider() iotago.APIProvider {
 	return n.apiProvider
+}
+
+// INXNodeClient returns the NodeClient.
+func (n *NodeBridge) INXNodeClient() (*nodeclient.Client, error) {
+	return inx.NewNodeclientOverINX(n.client)
 }
 
 // Indexer returns the IndexerClient.

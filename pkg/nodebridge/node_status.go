@@ -11,6 +11,7 @@ const (
 	ListenToNodeStatusCooldownInMilliseconds = 1_000
 )
 
+// NodeStatus returns the current node status.
 func (n *NodeBridge) NodeStatus() *inx.NodeStatus {
 	n.nodeStatusMutex.RLock()
 	defer n.nodeStatusMutex.RUnlock()
@@ -18,10 +19,12 @@ func (n *NodeBridge) NodeStatus() *inx.NodeStatus {
 	return n.nodeStatus
 }
 
+// IsNodeHealthy returns true if the node is healthy.
 func (n *NodeBridge) IsNodeHealthy() bool {
 	return n.NodeStatus().GetIsHealthy()
 }
 
+// LatestCommitment returns the latest commitment.
 func (n *NodeBridge) LatestCommitment() *Commitment {
 	n.nodeStatusMutex.RLock()
 	defer n.nodeStatusMutex.RUnlock()
@@ -29,6 +32,7 @@ func (n *NodeBridge) LatestCommitment() *Commitment {
 	return n.latestCommitment
 }
 
+// LatestFinalizedCommitment returns the latest finalized commitment.
 func (n *NodeBridge) LatestFinalizedCommitment() *Commitment {
 	n.nodeStatusMutex.RLock()
 	defer n.nodeStatusMutex.RUnlock()
@@ -36,6 +40,7 @@ func (n *NodeBridge) LatestFinalizedCommitment() *Commitment {
 	return n.latestFinalizedCommitment
 }
 
+// PruningEpoch returns the pruning epoch.
 func (n *NodeBridge) PruningEpoch() iotago.EpochIndex {
 	return iotago.EpochIndex(n.NodeStatus().GetPruningEpoch())
 }

@@ -29,10 +29,12 @@ func commitmentFromINXCommitment(ms *inx.Commitment, api iotago.API) (*Commitmen
 	}, nil
 }
 
+// ForceCommitUntil forces the node to commit until the given slot.
 func (n *NodeBridge) ForceCommitUntil(ctx context.Context, slot iotago.SlotIndex) error {
 	return lo.Return2(n.client.ForceCommitUntil(ctx, inx.WrapSlotIndex(slot)))
 }
 
+// Commitment returns the commitment for the given slot.
 func (n *NodeBridge) Commitment(ctx context.Context, slot iotago.SlotIndex) (*Commitment, error) {
 	req := &inx.CommitmentRequest{
 		CommitmentSlot: uint32(slot),
@@ -45,6 +47,7 @@ func (n *NodeBridge) Commitment(ctx context.Context, slot iotago.SlotIndex) (*Co
 	return commitmentFromINXCommitment(ms, n.apiProvider.APIForSlot(slot))
 }
 
+// CommitmentByID returns the commitment for the given commitment ID.
 func (n *NodeBridge) CommitmentByID(ctx context.Context, id iotago.CommitmentID) (*Commitment, error) {
 	req := &inx.CommitmentRequest{
 		CommitmentId: inx.NewCommitmentId(id),
