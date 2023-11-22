@@ -48,9 +48,7 @@ func (n *nodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago
 }
 
 // ListenToBlocks listens to blocks.
-func (n *nodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFunc, consumer func(block *iotago.Block)) error {
-	defer cancel()
-
+func (n *nodeBridge) ListenToBlocks(ctx context.Context, consumer func(block *iotago.Block)) error {
 	stream, err := n.client.ListenToBlocks(ctx, &inx.NoParams{})
 	if err != nil {
 		return err

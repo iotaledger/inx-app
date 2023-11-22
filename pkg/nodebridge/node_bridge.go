@@ -63,7 +63,7 @@ type NodeBridge interface {
 	// Block returns the block for the given block ID.
 	Block(ctx context.Context, blockID iotago.BlockID) (*iotago.Block, error)
 	// ListenToBlocks listens to blocks.
-	ListenToBlocks(ctx context.Context, cancel context.CancelFunc, consumer func(block *iotago.Block)) error
+	ListenToBlocks(ctx context.Context, consumer func(block *iotago.Block)) error
 
 	// ForceCommitUntil forces the node to commit until the given slot.
 	ForceCommitUntil(ctx context.Context, slot iotago.SlotIndex) error
@@ -188,12 +188,12 @@ func (n *nodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 // Run starts the node bridge.
 func (n *nodeBridge) Run(ctx context.Context) {
 	c, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	go func() {
-		if err := n.listenToNodeStatus(c, cancel); err != nil {
+		if err := n.listenToNodeStatus(c); err != nil {
 			n.LogErrorf("Error listening to node status: %s", err)
 		}
+		cancel()
 	}()
 
 	<-c.Done()

@@ -45,9 +45,7 @@ func (n *nodeBridge) PruningEpoch() iotago.EpochIndex {
 	return iotago.EpochIndex(n.NodeStatus().GetPruningEpoch())
 }
 
-func (n *nodeBridge) listenToNodeStatus(ctx context.Context, cancel context.CancelFunc) error {
-	defer cancel()
-
+func (n *nodeBridge) listenToNodeStatus(ctx context.Context) error {
 	stream, err := n.client.ListenToNodeStatus(ctx, &inx.NodeStatusRequest{CooldownInMilliseconds: ListenToNodeStatusCooldownInMilliseconds})
 	if err != nil {
 		return err
