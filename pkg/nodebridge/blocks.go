@@ -48,17 +48,50 @@ func (n *nodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago
 }
 
 // ListenToBlocks listens to blocks.
-func (n *nodeBridge) ListenToBlocks(ctx context.Context, consumer func(block *iotago.Block)) error {
+func (n *nodeBridge) ListenToBlocks(ctx context.Context, consumer func(*iotago.Block) error) error {
 	stream, err := n.client.ListenToBlocks(ctx, &inx.NoParams{})
 	if err != nil {
 		return err
 	}
 
 	if err := ListenToStream(ctx, stream.Recv, func(block *inx.Block) error {
-		consumer(block.MustUnwrapBlock(n.apiProvider))
-		return nil
+		return consumer(block.MustUnwrapBlock(n.apiProvider))
 	}); err != nil {
 		n.LogErrorf("ListenToBlocks failed: %s", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+// ListenToAcceptedBlocks listens to accepted blocks.
+func (n *nodeBridge) ListenToAcceptedBlocks(ctx context.Context, consumer func(*inx.BlockMetadata) error) error {
+	stream, err := n.client.ListenToAcceptedBlocks(ctx, &inx.NoParams{})
+	if err != nil {
+		return err
+	}
+
+	if err := ListenToStream(ctx, stream.Recv, func(blockMetadata *inx.BlockMetadata) error {
+		return consumer(blockMetadata)
+	}); err != nil {
+		n.LogErrorf("ListenToAcceptedBlocks failed: %s", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+// ListenToConfirmedBlocks listens to confirmed blocks.
+func (n *nodeBridge) ListenToConfirmedBlocks(ctx context.Context, consumer func(*inx.BlockMetadata) error) error {
+	stream, err := n.client.ListenToConfirmedBlocks(ctx, &inx.NoParams{})
+	if err != nil {
+		return err
+	}
+
+	if err := ListenToStream(ctx, stream.Recv, func(blockMetadata *inx.BlockMetadata) error {
+		return consumer(blockMetadata)
+	}); err != nil {
+		n.LogErrorf("ListenToConfirmedBlocks failed: %s", err.Error())
 		return err
 	}
 

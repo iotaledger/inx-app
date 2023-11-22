@@ -63,7 +63,11 @@ type NodeBridge interface {
 	// Block returns the block for the given block ID.
 	Block(ctx context.Context, blockID iotago.BlockID) (*iotago.Block, error)
 	// ListenToBlocks listens to blocks.
-	ListenToBlocks(ctx context.Context, consumer func(block *iotago.Block)) error
+	ListenToBlocks(ctx context.Context, consumer func(block *iotago.Block) error) error
+	// ListenToAcceptedBlocks listens to accepted blocks.
+	ListenToAcceptedBlocks(ctx context.Context, consumer func(blockMetadata *inx.BlockMetadata) error) error
+	// ListenToConfirmedBlocks listens to confirmed blocks.
+	ListenToConfirmedBlocks(ctx context.Context, consumer func(blockMetadata *inx.BlockMetadata) error) error
 
 	// ForceCommitUntil forces the node to commit until the given slot.
 	ForceCommitUntil(ctx context.Context, slot iotago.SlotIndex) error
@@ -71,9 +75,11 @@ type NodeBridge interface {
 	Commitment(ctx context.Context, slot iotago.SlotIndex) (*Commitment, error)
 	// CommitmentByID returns the commitment for the given commitment ID.
 	CommitmentByID(ctx context.Context, id iotago.CommitmentID) (*Commitment, error)
+	// ListenToCommitments listens to commitments.
+	ListenToCommitments(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consumer func(commitment *Commitment) error) error
 
 	// ListenToLedgerUpdates listens to ledger updates.
-	ListenToLedgerUpdates(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consume func(update *LedgerUpdate) error) error
+	ListenToLedgerUpdates(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consumer func(update *LedgerUpdate) error) error
 	// ListenToAcceptedTransactions listens to accepted transactions.
 	ListenToAcceptedTransactions(ctx context.Context, consumer func(tx *AcceptedTransaction) error) error
 
