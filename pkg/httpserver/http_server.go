@@ -169,6 +169,9 @@ func ParseRequestByHeader[T any](c echo.Context, api iotago.API, binaryParserFun
 		reflectType := reflect.TypeOf(obj)
 		if reflectType != nil && reflectType.Kind() == reflect.Pointer {
 			// passed generic type is a pointer type
+			// create a new instance of the type and decode into it
+			//nolint:forcetypeassert // we know that obj is a pointer type
+			obj = reflect.New(reflectType.Elem()).Interface().(T)
 			err = api.JSONDecode(bytes, obj, serix.WithValidation())
 		} else {
 			err = api.JSONDecode(bytes, &obj, serix.WithValidation())
