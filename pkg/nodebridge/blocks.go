@@ -48,14 +48,14 @@ func (n *nodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago
 }
 
 // ListenToBlocks listens to blocks.
-func (n *nodeBridge) ListenToBlocks(ctx context.Context, consumer func(*iotago.Block) error) error {
+func (n *nodeBridge) ListenToBlocks(ctx context.Context, consumer func(block *iotago.Block, rawData []byte) error) error {
 	stream, err := n.client.ListenToBlocks(ctx, &inx.NoParams{})
 	if err != nil {
 		return err
 	}
 
 	if err := ListenToStream(ctx, stream.Recv, func(block *inx.Block) error {
-		return consumer(block.MustUnwrapBlock(n.apiProvider))
+		return consumer(block.MustUnwrapBlock(n.apiProvider), block.GetBlock().GetData())
 	}); err != nil {
 		n.LogErrorf("ListenToBlocks failed: %s", err.Error())
 		return err

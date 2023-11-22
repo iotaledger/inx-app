@@ -63,7 +63,7 @@ type NodeBridge interface {
 	// Block returns the block for the given block ID.
 	Block(ctx context.Context, blockID iotago.BlockID) (*iotago.Block, error)
 	// ListenToBlocks listens to blocks.
-	ListenToBlocks(ctx context.Context, consumer func(block *iotago.Block) error) error
+	ListenToBlocks(ctx context.Context, consumer func(block *iotago.Block, rawData []byte) error) error
 	// ListenToAcceptedBlocks listens to accepted blocks.
 	ListenToAcceptedBlocks(ctx context.Context, consumer func(blockMetadata *inx.BlockMetadata) error) error
 	// ListenToConfirmedBlocks listens to confirmed blocks.
@@ -76,7 +76,7 @@ type NodeBridge interface {
 	// CommitmentByID returns the commitment for the given commitment ID.
 	CommitmentByID(ctx context.Context, id iotago.CommitmentID) (*Commitment, error)
 	// ListenToCommitments listens to commitments.
-	ListenToCommitments(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consumer func(commitment *Commitment) error) error
+	ListenToCommitments(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consumer func(commitment *Commitment, rawData []byte) error) error
 
 	// ListenToLedgerUpdates listens to ledger updates.
 	ListenToLedgerUpdates(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consumer func(update *LedgerUpdate) error) error

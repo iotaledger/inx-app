@@ -65,7 +65,7 @@ func (n *nodeBridge) CommitmentByID(ctx context.Context, id iotago.CommitmentID)
 }
 
 // ListenToCommitments listens to commitments.
-func (n *nodeBridge) ListenToCommitments(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consumer func(commitment *Commitment) error) error {
+func (n *nodeBridge) ListenToCommitments(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consumer func(commitment *Commitment, rawData []byte) error) error {
 	req := &inx.SlotRangeRequest{
 		StartSlot: uint32(startSlot),
 		EndSlot:   uint32(endSlot),
@@ -87,7 +87,7 @@ func (n *nodeBridge) ListenToCommitments(ctx context.Context, startSlot, endSlot
 		return consumer(&Commitment{
 			CommitmentID: commitmentID,
 			Commitment:   commitment,
-		})
+		}, inxCommitment.GetCommitment().GetData())
 	}); err != nil {
 		n.LogErrorf("ListenToCommitments failed: %s", err.Error())
 		return err
