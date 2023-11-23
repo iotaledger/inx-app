@@ -19,16 +19,15 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/serializer/v2/serix"
 	iotago "github.com/iotaledger/iota.go/v4"
+	iotaapi "github.com/iotaledger/iota.go/v4/api"
 	"github.com/iotaledger/iota.go/v4/hexutil"
 )
 
 const (
-	MIMEApplicationVendorIOTASerializerV1 = "application/vnd.iota.serializer-v1"
-	MIMEApplicationVendorIOTASerializerV2 = "application/vnd.iota.serializer-v2"
-	ProtocolHTTP                          = "http"
-	ProtocolHTTPS                         = "https"
-	ProtocolWS                            = "ws"
-	ProtocolWSS                           = "wss"
+	ProtocolHTTP  = "http"
+	ProtocolHTTPS = "https"
+	ProtocolWS    = "ws"
+	ProtocolWSS   = "wss"
 )
 
 var (
@@ -147,7 +146,7 @@ func GetRequestContentType(c echo.Context, supportedContentTypes ...string) (str
 func ParseRequestByHeader[T any](c echo.Context, api iotago.API, binaryParserFunc func(bytes []byte) (T, int, error)) (T, error) {
 	var obj T
 
-	mimeType, err := GetRequestContentType(c, MIMEApplicationVendorIOTASerializerV2, echo.MIMEApplicationJSON)
+	mimeType, err := GetRequestContentType(c, iotaapi.MIMEApplicationVendorIOTASerializerV2, echo.MIMEApplicationJSON)
 	if err != nil {
 		return obj, ierrors.Join(ErrInvalidParameter, err)
 	}
@@ -181,7 +180,7 @@ func ParseRequestByHeader[T any](c echo.Context, api iotago.API, binaryParserFun
 			return obj, ierrors.Wrapf(ErrInvalidParameter, "failed to decode json data, error: %w", err)
 		}
 
-	case MIMEApplicationVendorIOTASerializerV2:
+	case iotaapi.MIMEApplicationVendorIOTASerializerV2:
 		obj, _, err = binaryParserFunc(bytes)
 		if err != nil {
 			return obj, ierrors.Wrapf(ErrInvalidParameter, "failed to parse binary data, error: %w", err)
@@ -198,19 +197,19 @@ func ParseRequestByHeader[T any](c echo.Context, api iotago.API, binaryParserFun
 // Supported MIME types: IOTASerializerV2, JSON.
 // If the MIME type is not supported, or there is none, it defaults to JSON.
 func SendResponseByHeader(c echo.Context, api iotago.API, obj any) error {
-	mimeType, err := GetAcceptHeaderContentType(c, MIMEApplicationVendorIOTASerializerV2, echo.MIMEApplicationJSON)
+	mimeType, err := GetAcceptHeaderContentType(c, iotaapi.MIMEApplicationVendorIOTASerializerV2, echo.MIMEApplicationJSON)
 	if err != nil && !ierrors.Is(err, ErrNotAcceptable) {
 		return err
 	}
 
 	switch mimeType {
-	case MIMEApplicationVendorIOTASerializerV2:
+	case iotaapi.MIMEApplicationVendorIOTASerializerV2:
 		b, err := api.Encode(obj)
 		if err != nil {
 			return ierrors.Wrap(err, "failed to encode binary data")
 		}
 
-		return c.Blob(http.StatusOK, MIMEApplicationVendorIOTASerializerV2, b)
+		return c.Blob(http.StatusOK, iotaapi.MIMEApplicationVendorIOTASerializerV2, b)
 
 	// default to echo.MIMEApplicationJSON
 	default:
@@ -403,60 +402,6 @@ func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, erro
 	return outputID, nil
 }
 
-func ParseAccountIDParam(c echo.Context, paramName string) (iotago.AccountID, error) {
-	accountID := iotago.AccountID{}
-	accountIDHex := strings.ToLower(c.Param(paramName))
-
-	accountIDBytes, err := hexutil.DecodeHex(accountIDHex)
-	if err != nil {
-		return accountID, ierrors.Wrapf(ErrInvalidParameter, "invalid accountID: %s, error: %w", accountIDHex, err)
-	}
-
-	if len(accountIDBytes) != iotago.AccountIDLength {
-		return accountID, ierrors.Wrapf(ErrInvalidParameter, "invalid accountID: %s, invalid length: %d", accountIDHex, len(accountIDBytes))
-	}
-
-	copy(accountID[:], accountIDBytes)
-
-	return accountID, nil
-}
-
-func ParseAnchorIDParam(c echo.Context, paramName string) (iotago.AnchorID, error) {
-	anchorID := iotago.AnchorID{}
-	anchorIDHex := strings.ToLower(c.Param(paramName))
-
-	anchorIDBytes, err := hexutil.DecodeHex(anchorIDHex)
-	if err != nil {
-		return anchorID, ierrors.Wrapf(ErrInvalidParameter, "invalid anchorID: %s, error: %w", anchorIDHex, err)
-	}
-
-	if len(anchorIDBytes) != iotago.AnchorIDLength {
-		return anchorID, ierrors.Wrapf(ErrInvalidParameter, "invalid anchorID: %s, invalid length: %d", anchorIDHex, len(anchorIDBytes))
-	}
-
-	copy(anchorID[:], anchorIDBytes)
-
-	return anchorID, nil
-}
-
-func ParseNFTIDParam(c echo.Context, paramName string) (iotago.NFTID, error) {
-	nftID := iotago.NFTID{}
-	nftIDHex := strings.ToLower(c.Param(paramName))
-
-	nftIDBytes, err := hexutil.DecodeHex(nftIDHex)
-	if err != nil {
-		return nftID, ierrors.Wrapf(ErrInvalidParameter, "invalid NFT ID: %s, error: %w", nftIDHex, err)
-	}
-
-	if len(nftIDBytes) != iotago.NFTIDLength {
-		return nftID, ierrors.Wrapf(ErrInvalidParameter, "invalid nftID: %s, invalid length: %d", nftIDHex, len(nftIDBytes))
-	}
-
-	copy(nftID[:], nftIDBytes)
-
-	return nftID, nil
-}
-
 func ParseFoundryIDParam(c echo.Context, paramName string) (iotago.FoundryID, error) {
 	foundryID := iotago.FoundryID{}
 	foundryIDHex := strings.ToLower(c.Param(paramName))
@@ -541,21 +486,6 @@ func ParseSlotParam(c echo.Context, paramName string) (iotago.SlotIndex, error) 
 	}
 
 	return iotago.SlotIndex(value), nil
-}
-
-func ParseEpochParam(c echo.Context, paramName string) (iotago.EpochIndex, error) {
-	epochParam := strings.ToLower(c.Param(paramName))
-
-	if epochParam == "" {
-		return 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
-	}
-
-	value, err := strconv.ParseUint(epochParam, 10, 32)
-	if err != nil {
-		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", epochParam, err)
-	}
-
-	return iotago.EpochIndex(value), nil
 }
 
 func GetURL(protocol string, host string, port uint16, path ...string) string {

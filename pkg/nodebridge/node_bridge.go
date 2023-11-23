@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/hive.go/runtime/options"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
-	"github.com/iotaledger/iota.go/v4/api"
 	"github.com/iotaledger/iota.go/v4/nodeclient"
 )
 
@@ -33,7 +32,7 @@ type NodeBridge struct {
 	conn        *grpc.ClientConn
 	client      inx.INXClient
 	NodeConfig  *inx.NodeConfiguration
-	apiProvider *api.EpochBasedProvider
+	apiProvider *iotago.EpochBasedProvider
 
 	nodeStatusMutex           sync.RWMutex
 	nodeStatus                *inx.NodeStatus
@@ -62,7 +61,7 @@ func NewNodeBridge(log *logger.Logger, opts ...options.Option[NodeBridge]) *Node
 			LatestCommitmentChanged:          event.New1[*Commitment](),
 			LatestFinalizedCommitmentChanged: event.New1[*Commitment](),
 		},
-		apiProvider: api.NewEpochBasedProvider(),
+		apiProvider: iotago.NewEpochBasedProvider(),
 	}, opts)
 }
 
