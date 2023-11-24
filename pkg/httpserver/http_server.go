@@ -196,10 +196,15 @@ func ParseRequestByHeader[T any](c echo.Context, api iotago.API, binaryParserFun
 // SendResponseByHeader sends the response based on the MIME type in the accept header.
 // Supported MIME types: IOTASerializerV2, JSON.
 // If the MIME type is not supported, or there is none, it defaults to JSON.
-func SendResponseByHeader(c echo.Context, api iotago.API, obj any) error {
+func SendResponseByHeader(c echo.Context, api iotago.API, obj any, httpStatusCode ...int) error {
 	mimeType, err := GetAcceptHeaderContentType(c, iotaapi.MIMEApplicationVendorIOTASerializerV2, echo.MIMEApplicationJSON)
 	if err != nil && !ierrors.Is(err, ErrNotAcceptable) {
 		return err
+	}
+
+	statusCode := http.StatusOK
+	if len(httpStatusCode) > 0 {
+		statusCode = httpStatusCode[0]
 	}
 
 	switch mimeType {
@@ -209,7 +214,7 @@ func SendResponseByHeader(c echo.Context, api iotago.API, obj any) error {
 			return ierrors.Wrap(err, "failed to encode binary data")
 		}
 
-		return c.Blob(http.StatusOK, iotaapi.MIMEApplicationVendorIOTASerializerV2, b)
+		return c.Blob(statusCode, iotaapi.MIMEApplicationVendorIOTASerializerV2, b)
 
 	// default to echo.MIMEApplicationJSON
 	default:
@@ -218,7 +223,7 @@ func SendResponseByHeader(c echo.Context, api iotago.API, obj any) error {
 			return ierrors.Wrap(err, "failed to encode json data")
 		}
 
-		return c.JSONBlob(http.StatusOK, j)
+		return c.JSONBlob(statusCode, j)
 	}
 }
 
