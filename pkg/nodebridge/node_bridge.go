@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/options"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
+	"github.com/iotaledger/iota.go/v4/api"
 	"github.com/iotaledger/iota.go/v4/nodeclient"
 )
 
@@ -68,6 +69,9 @@ type NodeBridge interface {
 	ListenToAcceptedBlocks(ctx context.Context, consumer func(blockMetadata *inx.BlockMetadata) error) error
 	// ListenToConfirmedBlocks listens to confirmed blocks.
 	ListenToConfirmedBlocks(ctx context.Context, consumer func(blockMetadata *inx.BlockMetadata) error) error
+
+	// Output returns the output with metadata for the given output ID.
+	Output(ctx context.Context, outputID iotago.OutputID) (outputWithMetadata *api.OutputWithMetadataResponse, rawData []byte, err error)
 
 	// ForceCommitUntil forces the node to commit until the given slot.
 	ForceCommitUntil(ctx context.Context, slot iotago.SlotIndex) error
