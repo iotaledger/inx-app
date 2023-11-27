@@ -31,6 +31,8 @@ type NodeBridge interface {
 	Run(ctx context.Context)
 	// Client returns the INXClient.
 	Client() inx.INXClient
+	// NodeConfig returns the NodeConfiguration.
+	NodeConfig() *inx.NodeConfiguration
 	// APIProvider returns the APIProvider.
 	APIProvider() iotago.APIProvider
 	// INXNodeClient returns the NodeClient.
@@ -112,7 +114,7 @@ type nodeBridge struct {
 
 	conn        *grpc.ClientConn
 	client      inx.INXClient
-	NodeConfig  *inx.NodeConfiguration
+	nodeConfig  *inx.NodeConfiguration
 	apiProvider *iotago.EpochBasedProvider
 
 	nodeStatusMutex           sync.RWMutex
@@ -174,7 +176,7 @@ func (n *nodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 	if err != nil {
 		return err
 	}
-	n.NodeConfig = nodeConfig
+	n.nodeConfig = nodeConfig
 
 	n.apiProvider = nodeConfig.APIProvider()
 
@@ -212,6 +214,11 @@ func (n *nodeBridge) Run(ctx context.Context) {
 // Client returns the INXClient.
 func (n *nodeBridge) Client() inx.INXClient {
 	return n.client
+}
+
+// NodeConfig returns the NodeConfiguration.
+func (n *nodeBridge) NodeConfig() *inx.NodeConfiguration {
+	return n.nodeConfig
 }
 
 // APIProvider returns the APIProvider.
