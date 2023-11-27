@@ -17,6 +17,7 @@ var (
 )
 
 type OutputWithMetadataAndRawData struct {
+	OutputID           iotago.OutputID
 	OutputWithMetadata *api.OutputWithMetadataResponse
 	RawOutputData      []byte
 }

@@ -51,6 +51,7 @@ func (n *nodeBridge) unwrapOutputWithMetadata(inxOutput *inx.LedgerOutput, inxSp
 	}
 
 	return &OutputWithMetadataAndRawData{
+		OutputID: outputID,
 		OutputWithMetadata: &iotaapi.OutputWithMetadataResponse{
 			Output:        output,
 			OutputIDProof: outputIDProof,
