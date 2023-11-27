@@ -70,7 +70,7 @@ type NodeBridge interface {
 	ListenToConfirmedBlocks(ctx context.Context, consumer func(blockMetadata *inx.BlockMetadata) error) error
 
 	// Output returns the output with metadata for the given output ID.
-	Output(ctx context.Context, outputID iotago.OutputID) (outputWithMetadataAndRawData *OutputWithMetadataAndRawData, err error)
+	Output(ctx context.Context, outputID iotago.OutputID) (*Output, error)
 
 	// ForceCommitUntil forces the node to commit until the given slot.
 	ForceCommitUntil(ctx context.Context, slot iotago.SlotIndex) error
