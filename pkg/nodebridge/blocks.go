@@ -7,7 +7,8 @@ import (
 	iotago "github.com/iotaledger/iota.go/v4"
 )
 
-func (n *NodeBridge) ActiveRootBlocks(ctx context.Context) (map[iotago.BlockID]iotago.CommitmentID, error) {
+// ActiveRootBlocks returns the active root blocks.
+func (n *nodeBridge) ActiveRootBlocks(ctx context.Context) (map[iotago.BlockID]iotago.CommitmentID, error) {
 	response, err := n.client.ReadActiveRootBlocks(ctx, &inx.NoParams{})
 	if err != nil {
 		return nil, err
@@ -16,7 +17,8 @@ func (n *NodeBridge) ActiveRootBlocks(ctx context.Context) (map[iotago.BlockID]i
 	return response.Unwrap()
 }
 
-func (n *NodeBridge) SubmitBlock(ctx context.Context, block *iotago.Block) (iotago.BlockID, error) {
+// SubmitBlock submits the given block.
+func (n *nodeBridge) SubmitBlock(ctx context.Context, block *iotago.Block) (iotago.BlockID, error) {
 	blk, err := inx.WrapBlock(block)
 	if err != nil {
 		return iotago.BlockID{}, err
@@ -30,11 +32,13 @@ func (n *NodeBridge) SubmitBlock(ctx context.Context, block *iotago.Block) (iota
 	return response.Unwrap(), nil
 }
 
-func (n *NodeBridge) BlockMetadata(ctx context.Context, blockID iotago.BlockID) (*inx.BlockMetadata, error) {
+// BlockMetadata returns the block metadata for the given block ID.
+func (n *nodeBridge) BlockMetadata(ctx context.Context, blockID iotago.BlockID) (*inx.BlockMetadata, error) {
 	return n.client.ReadBlockMetadata(ctx, inx.NewBlockId(blockID))
 }
 
-func (n *NodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago.Block, error) {
+// Block returns the block for the given block ID.
+func (n *nodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago.Block, error) {
 	inxMsg, err := n.client.ReadBlock(ctx, inx.NewBlockId(blockID))
 	if err != nil {
 		return nil, err
@@ -43,19 +47,51 @@ func (n *NodeBridge) Block(ctx context.Context, blockID iotago.BlockID) (*iotago
 	return inxMsg.UnwrapBlock(n.apiProvider)
 }
 
-func (n *NodeBridge) ListenToBlocks(ctx context.Context, cancel context.CancelFunc, consumer func(block *iotago.Block)) error {
-	defer cancel()
-
+// ListenToBlocks listens to blocks.
+func (n *nodeBridge) ListenToBlocks(ctx context.Context, consumer func(block *iotago.Block, rawData []byte) error) error {
 	stream, err := n.client.ListenToBlocks(ctx, &inx.NoParams{})
 	if err != nil {
 		return err
 	}
 
 	if err := ListenToStream(ctx, stream.Recv, func(block *inx.Block) error {
-		consumer(block.MustUnwrapBlock(n.apiProvider))
-		return nil
+		return consumer(block.MustUnwrapBlock(n.apiProvider), block.GetBlock().GetData())
 	}); err != nil {
 		n.LogErrorf("ListenToBlocks failed: %s", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+// ListenToAcceptedBlocks listens to accepted blocks.
+func (n *nodeBridge) ListenToAcceptedBlocks(ctx context.Context, consumer func(*inx.BlockMetadata) error) error {
+	stream, err := n.client.ListenToAcceptedBlocks(ctx, &inx.NoParams{})
+	if err != nil {
+		return err
+	}
+
+	if err := ListenToStream(ctx, stream.Recv, func(blockMetadata *inx.BlockMetadata) error {
+		return consumer(blockMetadata)
+	}); err != nil {
+		n.LogErrorf("ListenToAcceptedBlocks failed: %s", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+// ListenToConfirmedBlocks listens to confirmed blocks.
+func (n *nodeBridge) ListenToConfirmedBlocks(ctx context.Context, consumer func(*inx.BlockMetadata) error) error {
+	stream, err := n.client.ListenToConfirmedBlocks(ctx, &inx.NoParams{})
+	if err != nil {
+		return err
+	}
+
+	if err := ListenToStream(ctx, stream.Recv, func(blockMetadata *inx.BlockMetadata) error {
+		return consumer(blockMetadata)
+	}); err != nil {
+		n.LogErrorf("ListenToConfirmedBlocks failed: %s", err.Error())
 		return err
 	}
 

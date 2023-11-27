@@ -11,38 +11,41 @@ const (
 	ListenToNodeStatusCooldownInMilliseconds = 1_000
 )
 
-func (n *NodeBridge) NodeStatus() *inx.NodeStatus {
+// NodeStatus returns the current node status.
+func (n *nodeBridge) NodeStatus() *inx.NodeStatus {
 	n.nodeStatusMutex.RLock()
 	defer n.nodeStatusMutex.RUnlock()
 
 	return n.nodeStatus
 }
 
-func (n *NodeBridge) IsNodeHealthy() bool {
+// IsNodeHealthy returns true if the node is healthy.
+func (n *nodeBridge) IsNodeHealthy() bool {
 	return n.NodeStatus().GetIsHealthy()
 }
 
-func (n *NodeBridge) LatestCommitment() *Commitment {
+// LatestCommitment returns the latest commitment.
+func (n *nodeBridge) LatestCommitment() *Commitment {
 	n.nodeStatusMutex.RLock()
 	defer n.nodeStatusMutex.RUnlock()
 
 	return n.latestCommitment
 }
 
-func (n *NodeBridge) LatestFinalizedCommitment() *Commitment {
+// LatestFinalizedCommitment returns the latest finalized commitment.
+func (n *nodeBridge) LatestFinalizedCommitment() *Commitment {
 	n.nodeStatusMutex.RLock()
 	defer n.nodeStatusMutex.RUnlock()
 
 	return n.latestFinalizedCommitment
 }
 
-func (n *NodeBridge) PruningEpoch() iotago.EpochIndex {
+// PruningEpoch returns the pruning epoch.
+func (n *nodeBridge) PruningEpoch() iotago.EpochIndex {
 	return iotago.EpochIndex(n.NodeStatus().GetPruningEpoch())
 }
 
-func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.CancelFunc) error {
-	defer cancel()
-
+func (n *nodeBridge) listenToNodeStatus(ctx context.Context) error {
 	stream, err := n.client.ListenToNodeStatus(ctx, &inx.NodeStatusRequest{CooldownInMilliseconds: ListenToNodeStatusCooldownInMilliseconds})
 	if err != nil {
 		return err
@@ -56,7 +59,7 @@ func (n *NodeBridge) listenToNodeStatus(ctx context.Context, cancel context.Canc
 	return nil
 }
 
-func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
+func (n *nodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 
 	var latestCommitment *Commitment
 	var latestCommitmentChanged bool
@@ -94,11 +97,11 @@ func (n *NodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
 		slot := latestCommitment.CommitmentID.Slot()
 		n.apiProvider.SetCommittedSlot(slot)
 
-		n.Events.LatestCommitmentChanged.Trigger(latestCommitment)
+		n.events.LatestCommitmentChanged.Trigger(latestCommitment)
 	}
 
 	if latestFinalizedCommitmentChanged {
-		n.Events.LatestFinalizedCommitmentChanged.Trigger(latestFinalizedCommitment)
+		n.events.LatestFinalizedCommitmentChanged.Trigger(latestFinalizedCommitment)
 	}
 
 	return nil

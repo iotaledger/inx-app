@@ -25,7 +25,7 @@ func init() {
 
 type dependencies struct {
 	dig.In
-	NodeBridge      *nodebridge.NodeBridge
+	NodeBridge      nodebridge.NodeBridge
 	ShutdownHandler *shutdown.ShutdownHandler
 }
 
@@ -35,8 +35,8 @@ var (
 )
 
 func provide(c *dig.Container) error {
-	return c.Provide(func() (*nodebridge.NodeBridge, error) {
-		nodeBridge := nodebridge.NewNodeBridge(
+	return c.Provide(func() (nodebridge.NodeBridge, error) {
+		nodeBridge := nodebridge.New(
 			Component.Logger(),
 			nodebridge.WithTargetNetworkName(ParamsINX.TargetNetworkName),
 		)

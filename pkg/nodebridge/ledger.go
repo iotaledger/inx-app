@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/hive.go/ierrors"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
+	"github.com/iotaledger/iota.go/v4/api"
 )
 
 var (
@@ -15,14 +16,20 @@ var (
 	ErrLedgerUpdateEndedAbruptly                = ierrors.New("ledger update transaction ended before receiving all operations")
 )
 
+type OutputWithMetadataAndRawData struct {
+	OutputWithMetadata *api.OutputWithMetadataResponse
+	RawOutputData      []byte
+}
+
 type LedgerUpdate struct {
 	API          iotago.API
 	CommitmentID iotago.CommitmentID
-	Consumed     []*inx.LedgerSpent
-	Created      []*inx.LedgerOutput
+	Consumed     []*OutputWithMetadataAndRawData
+	Created      []*OutputWithMetadataAndRawData
 }
 
-func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consume func(update *LedgerUpdate) error) error {
+// ListenToLedgerUpdates listens to ledger updates.
+func (n *nodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSlot iotago.SlotIndex, consumer func(update *LedgerUpdate) error) error {
 	req := &inx.SlotRangeRequest{
 		StartSlot: uint32(startSlot),
 		EndSlot:   uint32(endSlot),
@@ -34,6 +41,7 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 	}
 
 	var update *LedgerUpdate
+	var latestCommitmentID iotago.CommitmentID
 	if err := ListenToStream(ctx, stream.Recv, func(payload *inx.LedgerUpdate) error {
 		switch op := payload.GetOp().(type) {
 
@@ -50,9 +58,10 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 				update = &LedgerUpdate{
 					API:          n.apiProvider.APIForSlot(commitmentID.Slot()),
 					CommitmentID: commitmentID,
-					Consumed:     make([]*inx.LedgerSpent, 0),
-					Created:      make([]*inx.LedgerOutput, 0),
+					Consumed:     make([]*OutputWithMetadataAndRawData, 0),
+					Created:      make([]*OutputWithMetadataAndRawData, 0),
 				}
+				latestCommitmentID = n.LatestCommitment().CommitmentID
 
 			case inx.LedgerUpdate_Marker_END:
 				commitmentID := op.BatchMarker.GetCommitmentId().Unwrap()
@@ -67,7 +76,7 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 					return ErrLedgerUpdateEndedAbruptly
 				}
 
-				if err := consume(update); err != nil {
+				if err := consumer(update); err != nil {
 					return err
 				}
 				update = nil
@@ -77,13 +86,25 @@ func (n *NodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 			if update == nil {
 				return ErrLedgerUpdateInvalidOperation
 			}
-			update.Consumed = append(update.Consumed, op.Consumed)
+
+			outputWithMetadataAndRawData, err := n.unwrapOutputWithMetadata(op.Consumed.GetOutput(), op.Consumed, latestCommitmentID)
+			if err != nil {
+				return ierrors.Wrap(err, "unable to unwrap consumed output")
+			}
+
+			update.Consumed = append(update.Consumed, outputWithMetadataAndRawData)
 
 		case *inx.LedgerUpdate_Created:
 			if update == nil {
 				return ErrLedgerUpdateInvalidOperation
 			}
-			update.Created = append(update.Created, op.Created)
+
+			outputWithMetadataAndRawData, err := n.unwrapOutputWithMetadata(op.Created, nil, latestCommitmentID)
+			if err != nil {
+				return ierrors.Wrap(err, "unable to unwrap created output")
+			}
+
+			update.Created = append(update.Created, outputWithMetadataAndRawData)
 		}
 
 		return nil
@@ -99,11 +120,12 @@ type AcceptedTransaction struct {
 	API           iotago.API
 	Slot          iotago.SlotIndex
 	TransactionID iotago.TransactionID
-	Consumed      []*inx.LedgerSpent
-	Created       []*inx.LedgerOutput
+	Consumed      []*OutputWithMetadataAndRawData
+	Created       []*OutputWithMetadataAndRawData
 }
 
-func (n *NodeBridge) ListenToAcceptedTransactions(ctx context.Context, consumer func(tx *AcceptedTransaction) error) error {
+// ListenToAcceptedTransactions listens to accepted transactions.
+func (n *nodeBridge) ListenToAcceptedTransactions(ctx context.Context, consumer func(*AcceptedTransaction) error) error {
 	stream, err := n.client.ListenToAcceptedTransactions(ctx, &inx.NoParams{})
 	if err != nil {
 		return err
@@ -112,12 +134,36 @@ func (n *NodeBridge) ListenToAcceptedTransactions(ctx context.Context, consumer 
 	if err := ListenToStream(ctx, stream.Recv, func(tx *inx.AcceptedTransaction) error {
 		slot := iotago.SlotIndex(tx.GetSlot())
 
+		latestCommitmentID := n.LatestCommitment().CommitmentID
+
+		inxSpents := tx.GetConsumed()
+		consumed := make([]*OutputWithMetadataAndRawData, 0, len(inxSpents))
+		for _, inxSpent := range inxSpents {
+			outputWithMetadataAndRawData, err := n.unwrapOutputWithMetadata(inxSpent.GetOutput(), inxSpent, latestCommitmentID)
+			if err != nil {
+				return ierrors.Wrap(err, "unable to unwrap consumed output")
+			}
+
+			consumed = append(consumed, outputWithMetadataAndRawData)
+		}
+
+		inxOutputs := tx.GetCreated()
+		created := make([]*OutputWithMetadataAndRawData, 0, len(inxOutputs))
+		for _, inxOutput := range inxOutputs {
+			outputWithMetadataAndRawData, err := n.unwrapOutputWithMetadata(inxOutput, nil, latestCommitmentID)
+			if err != nil {
+				return ierrors.Wrap(err, "unable to unwrap created output")
+			}
+
+			created = append(created, outputWithMetadataAndRawData)
+		}
+
 		return consumer(&AcceptedTransaction{
 			API:           n.apiProvider.APIForSlot(slot),
 			Slot:          slot,
 			TransactionID: tx.TransactionId.Unwrap(),
-			Consumed:      tx.GetConsumed(),
-			Created:       tx.GetCreated(),
+			Consumed:      consumed,
+			Created:       created,
 		})
 	}); err != nil {
 		n.LogErrorf("ListenToAcceptedTransactions failed: %s", err.Error())
