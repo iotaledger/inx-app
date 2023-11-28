@@ -25,10 +25,6 @@ type Output struct {
 	OutputIDProof *iotago.OutputIDProof
 	// Metadata is the metadata of the output.
 	Metadata *api.OutputMetadata
-	// SlotBooked is the slot in which the output was created.
-	SlotBooked iotago.SlotIndex
-	// SlotSpent is the slot in which the output was spent.
-	SlotSpent iotago.SlotIndex
 	// RawOutputData is the raw binary output data.
 	RawOutputData []byte
 }

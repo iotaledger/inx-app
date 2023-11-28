@@ -12,30 +12,33 @@ import (
 func (n *nodeBridge) unwrapOutput(inxOutput *inx.LedgerOutput, inxSpent *inx.LedgerSpent, latestCommitmentID iotago.CommitmentID) (*Output, error) {
 	outputID := inxOutput.UnwrapOutputID()
 
-	slotBooked := iotago.SlotIndex(inxOutput.GetSlotBooked())
-	metadata := &iotaapi.OutputMetadata{
-		BlockID:              inxOutput.UnwrapBlockID(),
-		TransactionID:        outputID.TransactionID(),
-		OutputIndex:          outputID.Index(),
-		IncludedCommitmentID: iotago.EmptyCommitmentID,
-		IsSpent:              false,
-		CommitmentIDSpent:    iotago.EmptyCommitmentID,
-		TransactionIDSpent:   iotago.EmptyTransactionID,
-		LatestCommitmentID:   latestCommitmentID,
-	}
-
+	includedCommitmentID := iotago.EmptyCommitmentID
 	if commitmentIDIncluded := inxOutput.GetCommitmentIdIncluded(); commitmentIDIncluded != nil {
-		metadata.IncludedCommitmentID = commitmentIDIncluded.Unwrap()
+		includedCommitmentID = commitmentIDIncluded.Unwrap()
 	}
 
-	var slotSpent iotago.SlotIndex
+	metadata := &iotaapi.OutputMetadata{
+		OutputID: outputID,
+		BlockID:  inxOutput.UnwrapBlockID(),
+		Included: &iotaapi.OutputInclusionMetadata{
+			Slot:          iotago.SlotIndex(inxOutput.GetSlotBooked()),
+			TransactionID: outputID.TransactionID(),
+			CommitmentID:  includedCommitmentID,
+		},
+		LatestCommitmentID: latestCommitmentID,
+	}
+
 	if inxSpent != nil {
-		metadata.IsSpent = true
+		spentCommitmentID := iotago.EmptyCommitmentID
 		if commitmentIDSpent := inxSpent.GetCommitmentIdSpent(); commitmentIDSpent != nil {
-			metadata.CommitmentIDSpent = commitmentIDSpent.Unwrap()
+			spentCommitmentID = commitmentIDSpent.Unwrap()
 		}
-		metadata.TransactionIDSpent = inxSpent.UnwrapTransactionIDSpent()
-		slotSpent = iotago.SlotIndex(inxSpent.GetSlotSpent())
+
+		metadata.Spent = &iotaapi.OutputConsumptionMetadata{
+			Slot:          iotago.SlotIndex(inxSpent.GetSlotSpent()),
+			TransactionID: inxSpent.UnwrapTransactionIDSpent(),
+			CommitmentID:  spentCommitmentID,
+		}
 	}
 
 	api := n.apiProvider.APIForSlot(outputID.Slot())
@@ -63,10 +66,6 @@ func (n *nodeBridge) unwrapOutput(inxOutput *inx.LedgerOutput, inxSpent *inx.Led
 		Output:        output,
 		OutputIDProof: outputIDProof,
 		Metadata:      metadata,
-		// we need to pass the slots here, because they can not be safely derived from "IncludedCommitmentID" and "CommitmentIDSpent"
-		// on client side, because for "AcceptedTransactions" the commitments (Included, Spent) might still be empty.
-		SlotBooked:    slotBooked,
-		SlotSpent:     slotSpent,
 		RawOutputData: inxOutput.GetOutput().GetData(),
 	}, nil
 }
