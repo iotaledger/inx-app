@@ -16,17 +16,28 @@ var (
 	ErrLedgerUpdateEndedAbruptly                = ierrors.New("ledger update transaction ended before receiving all operations")
 )
 
-type OutputWithMetadataAndRawData struct {
-	OutputID           iotago.OutputID
-	OutputWithMetadata *api.OutputWithMetadataResponse
-	RawOutputData      []byte
+type Output struct {
+	// OutputID is the ID of the output.
+	OutputID iotago.OutputID
+	// Output is the actual output.
+	Output iotago.TxEssenceOutput
+	// OutputIDProof is the proof of the output ID.
+	OutputIDProof *iotago.OutputIDProof
+	// Metadata is the metadata of the output.
+	Metadata *api.OutputMetadata
+	// SlotBooked is the slot in which the output was created.
+	SlotBooked iotago.SlotIndex
+	// SlotSpent is the slot in which the output was spent.
+	SlotSpent iotago.SlotIndex
+	// RawOutputData is the raw binary output data.
+	RawOutputData []byte
 }
 
 type LedgerUpdate struct {
 	API          iotago.API
 	CommitmentID iotago.CommitmentID
-	Consumed     []*OutputWithMetadataAndRawData
-	Created      []*OutputWithMetadataAndRawData
+	Consumed     []*Output
+	Created      []*Output
 }
 
 // ListenToLedgerUpdates listens to ledger updates.
@@ -59,8 +70,8 @@ func (n *nodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 				update = &LedgerUpdate{
 					API:          n.apiProvider.APIForSlot(commitmentID.Slot()),
 					CommitmentID: commitmentID,
-					Consumed:     make([]*OutputWithMetadataAndRawData, 0),
-					Created:      make([]*OutputWithMetadataAndRawData, 0),
+					Consumed:     make([]*Output, 0),
+					Created:      make([]*Output, 0),
 				}
 				latestCommitmentID = n.LatestCommitment().CommitmentID
 
@@ -88,24 +99,24 @@ func (n *nodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 				return ErrLedgerUpdateInvalidOperation
 			}
 
-			outputWithMetadataAndRawData, err := n.unwrapOutputWithMetadata(op.Consumed.GetOutput(), op.Consumed, latestCommitmentID)
+			output, err := n.unwrapOutput(op.Consumed.GetOutput(), op.Consumed, latestCommitmentID)
 			if err != nil {
 				return ierrors.Wrap(err, "unable to unwrap consumed output")
 			}
 
-			update.Consumed = append(update.Consumed, outputWithMetadataAndRawData)
+			update.Consumed = append(update.Consumed, output)
 
 		case *inx.LedgerUpdate_Created:
 			if update == nil {
 				return ErrLedgerUpdateInvalidOperation
 			}
 
-			outputWithMetadataAndRawData, err := n.unwrapOutputWithMetadata(op.Created, nil, latestCommitmentID)
+			output, err := n.unwrapOutput(op.Created, nil, latestCommitmentID)
 			if err != nil {
 				return ierrors.Wrap(err, "unable to unwrap created output")
 			}
 
-			update.Created = append(update.Created, outputWithMetadataAndRawData)
+			update.Created = append(update.Created, output)
 		}
 
 		return nil
@@ -121,8 +132,8 @@ type AcceptedTransaction struct {
 	API           iotago.API
 	Slot          iotago.SlotIndex
 	TransactionID iotago.TransactionID
-	Consumed      []*OutputWithMetadataAndRawData
-	Created       []*OutputWithMetadataAndRawData
+	Consumed      []*Output
+	Created       []*Output
 }
 
 // ListenToAcceptedTransactions listens to accepted transactions.
@@ -138,25 +149,25 @@ func (n *nodeBridge) ListenToAcceptedTransactions(ctx context.Context, consumer 
 		latestCommitmentID := n.LatestCommitment().CommitmentID
 
 		inxSpents := tx.GetConsumed()
-		consumed := make([]*OutputWithMetadataAndRawData, 0, len(inxSpents))
+		consumed := make([]*Output, 0, len(inxSpents))
 		for _, inxSpent := range inxSpents {
-			outputWithMetadataAndRawData, err := n.unwrapOutputWithMetadata(inxSpent.GetOutput(), inxSpent, latestCommitmentID)
+			output, err := n.unwrapOutput(inxSpent.GetOutput(), inxSpent, latestCommitmentID)
 			if err != nil {
 				return ierrors.Wrap(err, "unable to unwrap consumed output")
 			}
 
-			consumed = append(consumed, outputWithMetadataAndRawData)
+			consumed = append(consumed, output)
 		}
 
 		inxOutputs := tx.GetCreated()
-		created := make([]*OutputWithMetadataAndRawData, 0, len(inxOutputs))
+		created := make([]*Output, 0, len(inxOutputs))
 		for _, inxOutput := range inxOutputs {
-			outputWithMetadataAndRawData, err := n.unwrapOutputWithMetadata(inxOutput, nil, latestCommitmentID)
+			output, err := n.unwrapOutput(inxOutput, nil, latestCommitmentID)
 			if err != nil {
 				return ierrors.Wrap(err, "unable to unwrap created output")
 			}
 
-			created = append(created, outputWithMetadataAndRawData)
+			created = append(created, output)
 		}
 
 		return consumer(&AcceptedTransaction{

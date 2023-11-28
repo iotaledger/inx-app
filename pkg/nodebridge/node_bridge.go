@@ -31,16 +31,25 @@ type NodeBridge interface {
 	Run(ctx context.Context)
 	// Client returns the INXClient.
 	Client() inx.INXClient
+	// NodeConfig returns the NodeConfiguration.
+	NodeConfig() *inx.NodeConfiguration
 	// APIProvider returns the APIProvider.
 	APIProvider() iotago.APIProvider
+
 	// INXNodeClient returns the NodeClient.
 	INXNodeClient() (*nodeclient.Client, error)
+	// Management returns the ManagementClient.
+	// Returns ErrManagementPluginNotAvailable if the current node does not support the plugin.
+	Management(ctx context.Context) (nodeclient.ManagementClient, error)
 	// Indexer returns the IndexerClient.
 	// Returns ErrIndexerPluginNotAvailable if the current node does not support the plugin.
 	Indexer(ctx context.Context) (nodeclient.IndexerClient, error)
 	// EventAPI returns the EventAPIClient if supported by the node.
 	// Returns ErrMQTTPluginNotAvailable if the current node does not support the plugin.
 	EventAPI(ctx context.Context) (*nodeclient.EventAPIClient, error)
+	// BlockIssuer returns the BlockIssuerClient.
+	// Returns ErrBlockIssuerPluginNotAvailable if the current node does not support the plugin.
+	BlockIssuer(ctx context.Context) (nodeclient.BlockIssuerClient, error)
 
 	// ReadIsCandidate returns true if the given account is a candidate.
 	ReadIsCandidate(ctx context.Context, id iotago.AccountID, slot iotago.SlotIndex) (bool, error)
@@ -70,7 +79,7 @@ type NodeBridge interface {
 	ListenToConfirmedBlocks(ctx context.Context, consumer func(blockMetadata *inx.BlockMetadata) error) error
 
 	// Output returns the output with metadata for the given output ID.
-	Output(ctx context.Context, outputID iotago.OutputID) (outputWithMetadataAndRawData *OutputWithMetadataAndRawData, err error)
+	Output(ctx context.Context, outputID iotago.OutputID) (*Output, error)
 
 	// ForceCommitUntil forces the node to commit until the given slot.
 	ForceCommitUntil(ctx context.Context, slot iotago.SlotIndex) error
@@ -112,7 +121,7 @@ type nodeBridge struct {
 
 	conn        *grpc.ClientConn
 	client      inx.INXClient
-	NodeConfig  *inx.NodeConfiguration
+	nodeConfig  *inx.NodeConfiguration
 	apiProvider *iotago.EpochBasedProvider
 
 	nodeStatusMutex           sync.RWMutex
@@ -174,7 +183,7 @@ func (n *nodeBridge) Connect(ctx context.Context, address string, maxConnectionA
 	if err != nil {
 		return err
 	}
-	n.NodeConfig = nodeConfig
+	n.nodeConfig = nodeConfig
 
 	n.apiProvider = nodeConfig.APIProvider()
 
@@ -214,6 +223,11 @@ func (n *nodeBridge) Client() inx.INXClient {
 	return n.client
 }
 
+// NodeConfig returns the NodeConfiguration.
+func (n *nodeBridge) NodeConfig() *inx.NodeConfiguration {
+	return n.nodeConfig
+}
+
 // APIProvider returns the APIProvider.
 func (n *nodeBridge) APIProvider() iotago.APIProvider {
 	return n.apiProvider
@@ -224,73 +238,115 @@ func (n *nodeBridge) INXNodeClient() (*nodeclient.Client, error) {
 	return inx.NewNodeclientOverINX(n.client)
 }
 
-// Indexer returns the IndexerClient.
-// Returns ErrIndexerPluginNotAvailable if the current node does not support the plugin.
-// It retries every second until the given context is done.
-func (n *nodeBridge) Indexer(ctx context.Context) (nodeclient.IndexerClient, error) {
-
+func (n *nodeBridge) getPluginClient(ctx context.Context, clientInitHook func(ctx context.Context, nodeClient *nodeclient.Client) error, notAvailableError error) error {
 	nodeClient, err := n.INXNodeClient()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	getIndexerClient := func(ctx context.Context, nodeClient *nodeclient.Client) (nodeclient.IndexerClient, error) {
+	initClient := func(ctx context.Context, nodeClient *nodeclient.Client) error {
 		ctxTimeout, cancelTimeout := context.WithTimeout(ctx, 1*time.Second)
 		defer cancelTimeout()
 
-		return nodeClient.Indexer(ctxTimeout)
+		return clientInitHook(ctxTimeout, nodeClient)
 	}
 
-	// wait until indexer plugin is available
+	// wait until the plugin is available
 	for ctx.Err() == nil {
-		indexer, err := getIndexerClient(ctx, nodeClient)
-		if err != nil {
-			if !ierrors.Is(err, nodeclient.ErrIndexerPluginNotAvailable) {
-				return nil, err
+		if err := initClient(ctx, nodeClient); err != nil {
+			if !ierrors.Is(err, notAvailableError) {
+				return err
 			}
 			time.Sleep(1 * time.Second)
 
 			continue
 		}
 
-		return indexer, nil
+		return nil
 	}
 
-	return nil, nodeclient.ErrIndexerPluginNotAvailable
+	return notAvailableError
+
+}
+
+// Management returns the ManagementClient.
+// Returns ErrManagementPluginNotAvailable if the current node does not support the plugin.
+func (n *nodeBridge) Management(ctx context.Context) (nodeclient.ManagementClient, error) {
+	var client nodeclient.ManagementClient
+
+	if err := n.getPluginClient(ctx, func(ctx context.Context, nodeClient *nodeclient.Client) error {
+		managementClient, err := nodeClient.Management(ctx)
+		if err != nil {
+			return err
+		}
+		client = managementClient
+
+		return nil
+	}, nodeclient.ErrManagementPluginNotAvailable); err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+// Indexer returns the IndexerClient.
+// Returns ErrIndexerPluginNotAvailable if the current node does not support the plugin.
+func (n *nodeBridge) Indexer(ctx context.Context) (nodeclient.IndexerClient, error) {
+	var client nodeclient.IndexerClient
+
+	if err := n.getPluginClient(ctx, func(ctx context.Context, nodeClient *nodeclient.Client) error {
+		indexerClient, err := nodeClient.Indexer(ctx)
+		if err != nil {
+			return err
+		}
+		client = indexerClient
+
+		return nil
+	}, nodeclient.ErrIndexerPluginNotAvailable); err != nil {
+		return nil, err
+	}
+
+	return client, nil
 }
 
 // EventAPI returns the EventAPIClient if supported by the node.
 // Returns ErrMQTTPluginNotAvailable if the current node does not support the plugin.
-// It retries every second until the given context is done.
 func (n *nodeBridge) EventAPI(ctx context.Context) (*nodeclient.EventAPIClient, error) {
-	nodeClient, err := n.INXNodeClient()
-	if err != nil {
+	var client *nodeclient.EventAPIClient
+
+	if err := n.getPluginClient(ctx, func(ctx context.Context, nodeClient *nodeclient.Client) error {
+		eventAPIClient, err := nodeClient.EventAPI(ctx)
+		if err != nil {
+			return err
+		}
+		client = eventAPIClient
+
+		return nil
+	}, nodeclient.ErrMQTTPluginNotAvailable); err != nil {
 		return nil, err
 	}
 
-	getEventAPIClient := func(ctx context.Context, nodeClient *nodeclient.Client) (*nodeclient.EventAPIClient, error) {
-		ctxTimeout, cancelTimeout := context.WithTimeout(ctx, 1*time.Second)
-		defer cancelTimeout()
+	return client, nil
+}
 
-		return nodeClient.EventAPI(ctxTimeout)
-	}
+// BlockIssuer returns the BlockIssuerClient.
+// Returns ErrBlockIssuerPluginNotAvailable if the current node does not support the plugin.
+func (n *nodeBridge) BlockIssuer(ctx context.Context) (nodeclient.BlockIssuerClient, error) {
+	var client nodeclient.BlockIssuerClient
 
-	// wait until Event API plugin is available
-	for ctx.Err() == nil {
-		eventAPIClient, err := getEventAPIClient(ctx, nodeClient)
+	if err := n.getPluginClient(ctx, func(ctx context.Context, nodeClient *nodeclient.Client) error {
+		blockIssuerClient, err := nodeClient.BlockIssuer(ctx)
 		if err != nil {
-			if !ierrors.Is(err, nodeclient.ErrMQTTPluginNotAvailable) {
-				return nil, err
-			}
-			time.Sleep(1 * time.Second)
-
-			continue
+			return err
 		}
+		client = blockIssuerClient
 
-		return eventAPIClient, nil
+		return nil
+	}, nodeclient.ErrBlockIssuerPluginNotAvailable); err != nil {
+		return nil, err
 	}
 
-	return nil, nodeclient.ErrMQTTPluginNotAvailable
+	return client, nil
 }
 
 func ListenToStream[K any](ctx context.Context, receiverFunc func() (K, error), consumerFunc func(K) error) error {
