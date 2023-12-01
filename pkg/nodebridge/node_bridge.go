@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/options"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
+	"github.com/iotaledger/iota.go/v4/api"
 	"github.com/iotaledger/iota.go/v4/nodeclient"
 )
 
@@ -67,16 +68,19 @@ type NodeBridge interface {
 	ActiveRootBlocks(ctx context.Context) (map[iotago.BlockID]iotago.CommitmentID, error)
 	// SubmitBlock submits the given block.
 	SubmitBlock(ctx context.Context, block *iotago.Block) (iotago.BlockID, error)
-	// BlockMetadata returns the block metadata for the given block ID.
-	BlockMetadata(ctx context.Context, blockID iotago.BlockID) (*inx.BlockMetadata, error)
 	// Block returns the block for the given block ID.
 	Block(ctx context.Context, blockID iotago.BlockID) (*iotago.Block, error)
+	// BlockMetadata returns the block metadata for the given block ID.
+	BlockMetadata(ctx context.Context, blockID iotago.BlockID) (*api.BlockMetadataResponse, error)
 	// ListenToBlocks listens to blocks.
 	ListenToBlocks(ctx context.Context, consumer func(block *iotago.Block, rawData []byte) error) error
 	// ListenToAcceptedBlocks listens to accepted blocks.
-	ListenToAcceptedBlocks(ctx context.Context, consumer func(blockMetadata *inx.BlockMetadata) error) error
+	ListenToAcceptedBlocks(ctx context.Context, consumer func(blockMetadata *api.BlockMetadataResponse) error) error
 	// ListenToConfirmedBlocks listens to confirmed blocks.
-	ListenToConfirmedBlocks(ctx context.Context, consumer func(blockMetadata *inx.BlockMetadata) error) error
+	ListenToConfirmedBlocks(ctx context.Context, consumer func(blockMetadata *api.BlockMetadataResponse) error) error
+
+	// TransactionMetadata returns the transaction metadata for the given transaction ID.
+	TransactionMetadata(ctx context.Context, transactionID iotago.TransactionID) (*api.TransactionMetadataResponse, error)
 
 	// Output returns the output with metadata for the given output ID.
 	Output(ctx context.Context, outputID iotago.OutputID) (*Output, error)

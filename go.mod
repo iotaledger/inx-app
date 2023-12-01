@@ -12,8 +12,8 @@ require (
 	github.com/iotaledger/hive.go/logger v0.0.0-20231113110812-4ca2b6cc9a42
 	github.com/iotaledger/hive.go/runtime v0.0.0-20231128121006-331a9e522dfe
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20231113110812-4ca2b6cc9a42
-	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231128162307-cc6b309e93ef
-	github.com/iotaledger/iota.go/v4 v4.0.0-20231128162016-23f1b4e12cec
+	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231201114846-3bb5c3fd5665
+	github.com/iotaledger/iota.go/v4 v4.0.0-20231201114738-56b50084ab22
 	github.com/labstack/echo/v4 v4.11.3
 	go.uber.org/dig v1.17.1
 	google.golang.org/grpc v1.59.0
