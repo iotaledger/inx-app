@@ -16,7 +16,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/iotaledger/hive.go/ierrors"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/serializer/v2/serix"
 	iotago "github.com/iotaledger/iota.go/v4"
 	iotaapi "github.com/iotaledger/iota.go/v4/api"
@@ -74,7 +74,7 @@ func errorHandler() func(error, echo.Context) {
 
 // NewEcho returns a new Echo instance.
 // It hides the banner, adds a default HTTPErrorHandler and the Recover middleware.
-func NewEcho(logger *logger.Logger, onHTTPError func(err error, c echo.Context), debugRequestLoggerEnabled bool) *echo.Echo {
+func NewEcho(logger log.Logger, onHTTPError func(err error, c echo.Context), debugRequestLoggerEnabled bool) *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
 
@@ -88,7 +88,7 @@ func NewEcho(logger *logger.Logger, onHTTPError func(err error, c echo.Context),
 
 	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
 		LogErrorFunc: func(c echo.Context, err error, stack []byte) error {
-			logger.Errorf("Internal Server Error: %s \nrequestURI: %s\n %s", err.Error(), c.Request().RequestURI, string(debug.Stack()))
+			logger.LogErrorf("Internal Server Error: %s \nrequestURI: %s\n %s", err.Error(), c.Request().RequestURI, string(debug.Stack()))
 			return err
 		},
 	}))
@@ -109,7 +109,7 @@ func NewEcho(logger *logger.Logger, onHTTPError func(err error, c echo.Context),
 					errString = fmt.Sprintf("error: \"%s\", ", v.Error.Error())
 				}
 
-				logger.Debugf("%d %s \"%s\", %sagent: \"%s\", remoteIP: %s, responseSize: %s, took: %v", v.Status, v.Method, v.URI, errString, v.UserAgent, v.RemoteIP, humanize.Bytes(uint64(v.ResponseSize)), v.Latency.Truncate(time.Millisecond))
+				logger.LogDebugf("%d %s \"%s\", %sagent: \"%s\", remoteIP: %s, responseSize: %s, took: %v", v.Status, v.Method, v.URI, errString, v.UserAgent, v.RemoteIP, humanize.Bytes(uint64(v.ResponseSize)), v.Latency.Truncate(time.Millisecond))
 
 				return nil
 			},
