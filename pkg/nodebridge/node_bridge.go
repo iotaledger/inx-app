@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/iotaledger/hive.go/ierrors"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/hive.go/runtime/options"
 	inx "github.com/iotaledger/inx/go"
@@ -118,7 +118,7 @@ var _ NodeBridge = &nodeBridge{}
 
 type nodeBridge struct {
 	// the logger used to log events.
-	*logger.WrappedLogger
+	log.Logger
 
 	targetNetworkName string
 	events            *Events
@@ -147,9 +147,9 @@ func WithTargetNetworkName(targetNetworkName string) options.Option[nodeBridge] 
 	}
 }
 
-func New(log *logger.Logger, opts ...options.Option[nodeBridge]) NodeBridge {
+func New(log log.Logger, opts ...options.Option[nodeBridge]) NodeBridge {
 	return options.Apply(&nodeBridge{
-		WrappedLogger:     logger.NewWrappedLogger(log),
+		Logger:            log,
 		targetNetworkName: "",
 		events: &Events{
 			LatestCommitmentChanged:          event.New1[*Commitment](),

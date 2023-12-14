@@ -37,7 +37,7 @@ var (
 func provide(c *dig.Container) error {
 	return c.Provide(func() (nodebridge.NodeBridge, error) {
 		nodeBridge := nodebridge.New(
-			Component.Logger(),
+			Component.Logger,
 			nodebridge.WithTargetNetworkName(ParamsINX.TargetNetworkName),
 		)
 
