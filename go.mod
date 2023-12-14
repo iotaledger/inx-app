@@ -6,12 +6,12 @@ require (
 	github.com/dustin/go-humanize v1.0.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
-	github.com/iotaledger/hive.go/app v0.0.0-20231214025533-67add6c5091b
-	github.com/iotaledger/hive.go/ierrors v0.0.0-20231214025533-67add6c5091b
-	github.com/iotaledger/hive.go/lo v0.0.0-20231214025533-67add6c5091b
-	github.com/iotaledger/hive.go/log v0.0.0-20231214025533-67add6c5091b
-	github.com/iotaledger/hive.go/runtime v0.0.0-20231214025533-67add6c5091b
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20231214025533-67add6c5091b
+	github.com/iotaledger/hive.go/app v0.0.0-20231214121634-8b23c68d408d
+	github.com/iotaledger/hive.go/ierrors v0.0.0-20231214121634-8b23c68d408d
+	github.com/iotaledger/hive.go/lo v0.0.0-20231214121634-8b23c68d408d
+	github.com/iotaledger/hive.go/log v0.0.0-20231214121634-8b23c68d408d
+	github.com/iotaledger/hive.go/runtime v0.0.0-20231214121634-8b23c68d408d
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20231214121634-8b23c68d408d
 	github.com/iotaledger/inx/go v1.0.0-rc.2.0.20231206124145-f773dfe3927e
 	github.com/iotaledger/iota.go/v4 v4.0.0-20231206123921-2af411eef0b5
 	github.com/labstack/echo/v4 v4.11.3
@@ -37,11 +37,11 @@ require (
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/holiman/uint256 v1.2.4 // indirect
 	github.com/iancoleman/orderedmap v0.3.0 // indirect
-	github.com/iotaledger/hive.go/constraints v0.0.0-20231214025533-67add6c5091b // indirect
-	github.com/iotaledger/hive.go/core v1.0.0-rc.3.0.20231214025533-67add6c5091b // indirect
-	github.com/iotaledger/hive.go/crypto v0.0.0-20231214025533-67add6c5091b // indirect
-	github.com/iotaledger/hive.go/ds v0.0.0-20231214025533-67add6c5091b // indirect
-	github.com/iotaledger/hive.go/stringify v0.0.0-20231214025533-67add6c5091b // indirect
+	github.com/iotaledger/hive.go/constraints v0.0.0-20231214121634-8b23c68d408d // indirect
+	github.com/iotaledger/hive.go/core v1.0.0-rc.3.0.20231214121634-8b23c68d408d // indirect
+	github.com/iotaledger/hive.go/crypto v0.0.0-20231214121634-8b23c68d408d // indirect
+	github.com/iotaledger/hive.go/ds v0.0.0-20231214121634-8b23c68d408d // indirect
+	github.com/iotaledger/hive.go/stringify v0.0.0-20231214121634-8b23c68d408d // indirect
 	github.com/knadh/koanf v1.5.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/labstack/gommon v0.4.1 // indirect
