@@ -493,6 +493,21 @@ func ParseSlotParam(c echo.Context, paramName string) (iotago.SlotIndex, error) 
 	return iotago.SlotIndex(value), nil
 }
 
+func ParseWorkScoreParam(c echo.Context, paramName string) (iotago.WorkScore, error) {
+	workScoreParam := strings.ToLower(c.Param(paramName))
+
+	if workScoreParam == "" {
+		return 0, nil
+	}
+
+	value, err := strconv.ParseUint(workScoreParam, 10, 32)
+	if err != nil {
+		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", workScoreParam, err)
+	}
+
+	return iotago.WorkScore(value), nil
+}
+
 func GetURL(protocol string, host string, port uint16, path ...string) string {
 	return fmt.Sprintf("%s://%s%s", protocol, net.JoinHostPort(host, strconv.Itoa(int(port))), strings.Join(path, "/"))
 }
