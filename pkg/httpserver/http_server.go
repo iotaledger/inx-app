@@ -371,6 +371,15 @@ func ParseCommitmentIDQueryParam(c echo.Context, paramName string) (iotago.Commi
 	return commitmentID, nil
 }
 
+func ParseWorkScoreQueryParam(c echo.Context, paramName string) (iotago.WorkScore, error) {
+	workscore, err := ParseUint32QueryParam(c, paramName)
+	if err != nil {
+		return 0, err
+	}
+
+	return iotago.WorkScore(workscore), nil
+}
+
 func ParseCommitmentIDParam(c echo.Context, paramName string) (iotago.CommitmentID, error) {
 	commitmentIDHex := strings.ToLower(c.Param(paramName))
 
