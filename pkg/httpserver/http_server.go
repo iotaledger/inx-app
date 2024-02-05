@@ -303,6 +303,21 @@ func ParseCursorQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, 
 	return startedAtSlot, index, nil
 }
 
+func ParsePageSizeParam(c echo.Context, paramName string, maxPageSize uint32) uint32 {
+	pageSize := maxPageSize
+	if len(c.QueryParam(paramName)) > 0 {
+		pageSizeQueryParam, err := ParseUint32QueryParam(c, paramName, maxPageSize)
+		if err != nil {
+			return maxPageSize
+		}
+
+		// page size is already less or equal maxPageSize here
+		pageSize = pageSizeQueryParam
+	}
+
+	return pageSize
+}
+
 func ParseHexQueryParam(c echo.Context, paramName string, maxLen int) ([]byte, error) {
 	param := c.QueryParam(paramName)
 
