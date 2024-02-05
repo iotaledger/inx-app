@@ -356,6 +356,15 @@ func ParseCommitmentIDQueryParam(c echo.Context, paramName string) (iotago.Commi
 	return commitmentID, nil
 }
 
+func ParseWorkScoreQueryParam(c echo.Context, paramName string) (iotago.WorkScore, error) {
+	workscore, err := ParseUint32QueryParam(c, paramName)
+	if err != nil {
+		return 0, err
+	}
+
+	return iotago.WorkScore(workscore), nil
+}
+
 func ParseCommitmentIDParam(c echo.Context, paramName string) (iotago.CommitmentID, error) {
 	commitmentIDHex := strings.ToLower(c.Param(paramName))
 
@@ -491,21 +500,6 @@ func ParseSlotParam(c echo.Context, paramName string) (iotago.SlotIndex, error) 
 	}
 
 	return iotago.SlotIndex(value), nil
-}
-
-func ParseWorkScoreParam(c echo.Context, paramName string) (iotago.WorkScore, error) {
-	workScoreParam := strings.ToLower(c.Param(paramName))
-
-	if workScoreParam == "" {
-		return 0, nil
-	}
-
-	value, err := strconv.ParseUint(workScoreParam, 10, 32)
-	if err != nil {
-		return 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, error: %w", workScoreParam, err)
-	}
-
-	return iotago.WorkScore(value), nil
 }
 
 func GetURL(protocol string, host string, port uint16, path ...string) string {
