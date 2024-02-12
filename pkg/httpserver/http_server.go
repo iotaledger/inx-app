@@ -227,10 +227,14 @@ func SendResponseByHeader(c echo.Context, api iotago.API, obj any, httpStatusCod
 	}
 }
 
+// ParseBoolQueryParam parses the boolean query parameter.
+// It returns an error if the query parameter is not set.
 func ParseBoolQueryParam(c echo.Context, paramName string) (bool, error) {
 	return strconv.ParseBool(c.QueryParam(paramName))
 }
 
+// ParseUint32QueryParam parses the uint32 query parameter.
+// It returns an error if the query parameter is not set.
 func ParseUint32QueryParam(c echo.Context, paramName string, maxValue ...uint32) (uint32, error) {
 	intString := strings.ToLower(c.QueryParam(paramName))
 	if intString == "" {
@@ -251,6 +255,8 @@ func ParseUint32QueryParam(c echo.Context, paramName string, maxValue ...uint32)
 	return uint32(value), nil
 }
 
+// ParseSlotQueryParam parses the slot query parameter.
+// It returns an error if the query parameter is not set.
 func ParseSlotQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, error) {
 	slotParam := c.QueryParam(paramName)
 
@@ -266,6 +272,8 @@ func ParseSlotQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, er
 	return iotago.SlotIndex(value), nil
 }
 
+// ParseEpochQueryParam parses the epoch query parameter.
+// It returns an error if the query parameter is not set.
 func ParseEpochQueryParam(c echo.Context, paramName string) (iotago.EpochIndex, error) {
 	epochParam := c.QueryParam(paramName)
 
@@ -281,6 +289,8 @@ func ParseEpochQueryParam(c echo.Context, paramName string) (iotago.EpochIndex, 
 	return iotago.EpochIndex(value), nil
 }
 
+// ParseCursorQueryParam parses the cursor query parameter.
+// It returns an error if the query parameter is not set.
 func ParseCursorQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, uint32, error) {
 	cursor := c.QueryParam(paramName)
 	if cursor == "" {
@@ -303,8 +313,9 @@ func ParseCursorQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, 
 	return startedAtSlot, index, nil
 }
 
+// ParsePageSizeQueryParam parses the page size query parameter.
+// It returns the maxPageSize if the query parameter is not set or there was an error.
 func ParsePageSizeQueryParam(c echo.Context, paramName string, maxPageSize uint32) uint32 {
-	pageSize := maxPageSize
 	if len(c.QueryParam(paramName)) > 0 {
 		pageSizeQueryParam, err := ParseUint32QueryParam(c, paramName, maxPageSize)
 		if err != nil {
@@ -312,12 +323,14 @@ func ParsePageSizeQueryParam(c echo.Context, paramName string, maxPageSize uint3
 		}
 
 		// page size is already less or equal maxPageSize here
-		pageSize = pageSizeQueryParam
+		return pageSizeQueryParam
 	}
 
-	return pageSize
+	return maxPageSize
 }
 
+// ParseHexQueryParam parses the hex query parameter.
+// It returns an error if the query parameter is not set.
 func ParseHexQueryParam(c echo.Context, paramName string, maxLen int) ([]byte, error) {
 	param := c.QueryParam(paramName)
 
@@ -332,6 +345,8 @@ func ParseHexQueryParam(c echo.Context, paramName string, maxLen int) ([]byte, e
 	return paramBytes, nil
 }
 
+// ParseUnixTimestampQueryParam parses the unix timestamp query parameter.
+// It returns an error if the query parameter is not set.
 func ParseUnixTimestampQueryParam(c echo.Context, paramName string) (time.Time, error) {
 	timestamp, err := ParseUint32QueryParam(c, paramName)
 	if err != nil {
@@ -341,6 +356,8 @@ func ParseUnixTimestampQueryParam(c echo.Context, paramName string) (time.Time, 
 	return time.Unix(int64(timestamp), 0), nil
 }
 
+// ParseBech32AddressQueryParam parses the bech32 address query parameter.
+// It returns an error if the query parameter is not set.
 func ParseBech32AddressQueryParam(c echo.Context, prefix iotago.NetworkPrefix, paramName string) (iotago.Address, error) {
 	addressParam := strings.ToLower(c.QueryParam(paramName))
 
@@ -356,6 +373,8 @@ func ParseBech32AddressQueryParam(c echo.Context, prefix iotago.NetworkPrefix, p
 	return bech32Address, nil
 }
 
+// ParseCommitmentIDQueryParam parses the commitment ID query parameter.
+// It returns EmptyCommitmentID if the query parameter is not set.
 func ParseCommitmentIDQueryParam(c echo.Context, paramName string) (iotago.CommitmentID, error) {
 	commitmentIDHex := strings.ToLower(c.QueryParam(paramName))
 
@@ -371,15 +390,22 @@ func ParseCommitmentIDQueryParam(c echo.Context, paramName string) (iotago.Commi
 	return commitmentID, nil
 }
 
+// ParseWorkScoreQueryParam parses the work score query parameter.
+// It returns 0 if the query parameter is not set.
 func ParseWorkScoreQueryParam(c echo.Context, paramName string) (iotago.WorkScore, error) {
-	workscore, err := ParseUint32QueryParam(c, paramName)
+	if len(c.QueryParam(paramName)) == 0 {
+		return 0, nil
+	}
+
+	workScore, err := ParseUint32QueryParam(c, paramName)
 	if err != nil {
 		return 0, err
 	}
 
-	return iotago.WorkScore(workscore), nil
+	return iotago.WorkScore(workScore), nil
 }
 
+// ParseCommitmentIDParam parses the commitment ID parameter.
 func ParseCommitmentIDParam(c echo.Context, paramName string) (iotago.CommitmentID, error) {
 	commitmentIDHex := strings.ToLower(c.Param(paramName))
 
@@ -391,6 +417,7 @@ func ParseCommitmentIDParam(c echo.Context, paramName string) (iotago.Commitment
 	return commitmentID, nil
 }
 
+// ParseBlockIDParam parses the block ID parameter.
 func ParseBlockIDParam(c echo.Context, paramName string) (iotago.BlockID, error) {
 	blockIDHex := strings.ToLower(c.Param(paramName))
 
@@ -402,6 +429,7 @@ func ParseBlockIDParam(c echo.Context, paramName string) (iotago.BlockID, error)
 	return blockIDs[0], nil
 }
 
+// ParseTransactionIDParam parses the transaction ID parameter.
 func ParseTransactionIDParam(c echo.Context, paramName string) (iotago.TransactionID, error) {
 	transactionID := iotago.TransactionID{}
 	transactionIDHex := strings.ToLower(c.Param(paramName))
@@ -420,6 +448,7 @@ func ParseTransactionIDParam(c echo.Context, paramName string) (iotago.Transacti
 	return transactionID, nil
 }
 
+// ParseOutputIDParam parses the output ID parameter.
 func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, error) {
 	outputIDParam := strings.ToLower(c.Param(paramName))
 
@@ -431,6 +460,7 @@ func ParseOutputIDParam(c echo.Context, paramName string) (iotago.OutputID, erro
 	return outputID, nil
 }
 
+// ParseFoundryIDParam parses the foundry ID parameter.
 func ParseFoundryIDParam(c echo.Context, paramName string) (iotago.FoundryID, error) {
 	foundryID := iotago.FoundryID{}
 	foundryIDHex := strings.ToLower(c.Param(paramName))
@@ -449,6 +479,7 @@ func ParseFoundryIDParam(c echo.Context, paramName string) (iotago.FoundryID, er
 	return foundryID, nil
 }
 
+// ParseDelegationIDParam parses the delegation ID parameter.
 func ParseDelegationIDParam(c echo.Context, paramName string) (iotago.DelegationID, error) {
 	delegationID := iotago.DelegationID{}
 	delegationIDHex := strings.ToLower(c.Param(paramName))
@@ -467,6 +498,7 @@ func ParseDelegationIDParam(c echo.Context, paramName string) (iotago.Delegation
 	return delegationID, nil
 }
 
+// ParseBech32AddressParam parses the bech32 address parameter.
 func ParseBech32AddressParam(c echo.Context, prefix iotago.NetworkPrefix, paramName string) (iotago.Address, error) {
 	addressParam := strings.ToLower(c.Param(paramName))
 
@@ -482,6 +514,7 @@ func ParseBech32AddressParam(c echo.Context, prefix iotago.NetworkPrefix, paramN
 	return bech32Address, nil
 }
 
+// ParseUint64Param parses the uint64 parameter.
 func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uint64, error) {
 	intString := strings.ToLower(c.Param(paramName))
 	if intString == "" {
@@ -502,6 +535,7 @@ func ParseUint64Param(c echo.Context, paramName string, maxValue ...uint64) (uin
 	return value, nil
 }
 
+// ParseSlotParam parses the slot parameter.
 func ParseSlotParam(c echo.Context, paramName string) (iotago.SlotIndex, error) {
 	slotParam := strings.ToLower(c.Param(paramName))
 
@@ -517,6 +551,7 @@ func ParseSlotParam(c echo.Context, paramName string) (iotago.SlotIndex, error) 
 	return iotago.SlotIndex(value), nil
 }
 
+// GetURL joins the protocol, host, port and path to a URL.
 func GetURL(protocol string, host string, port uint16, path ...string) string {
 	return fmt.Sprintf("%s://%s%s", protocol, net.JoinHostPort(host, strconv.Itoa(int(port))), strings.Join(path, "/"))
 }
