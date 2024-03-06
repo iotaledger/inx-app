@@ -291,18 +291,18 @@ func ParseEpochQueryParam(c echo.Context, paramName string) (iotago.EpochIndex, 
 
 // ParseCursorQueryParam parses the cursor query parameter.
 // It returns an error if the query parameter is not set.
-func ParseCursorQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, uint32, error) {
+func ParseCursorQueryParam(c echo.Context, paramName string) (iotago.EpochIndex, uint32, error) {
 	cursor := c.QueryParam(paramName)
 	if cursor == "" {
 		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
 	}
 	cursorParts := strings.Split(cursor, ",")
 
-	slotPart, err := strconv.ParseUint(cursorParts[0], 10, 32)
+	epochPart, err := strconv.ParseUint(cursorParts[0], 10, 32)
 	if err != nil {
 		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, in parsing query parameter: %s error: %w", cursorParts[0], paramName, err)
 	}
-	startedAtSlot := iotago.SlotIndex(slotPart)
+	startedAtEpoch := iotago.EpochIndex(epochPart)
 
 	indexPart, err := strconv.ParseUint(cursorParts[1], 10, 32)
 	if err != nil {
@@ -310,7 +310,7 @@ func ParseCursorQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, 
 	}
 	index := uint32(indexPart)
 
-	return startedAtSlot, index, nil
+	return startedAtEpoch, index, nil
 }
 
 // ParsePageSizeQueryParam parses the page size query parameter.
