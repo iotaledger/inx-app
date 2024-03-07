@@ -87,7 +87,7 @@ func NewEcho(logger log.Logger, onHTTPError func(err error, c echo.Context), deb
 	}
 
 	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
-		LogErrorFunc: func(c echo.Context, err error, stack []byte) error {
+		LogErrorFunc: func(c echo.Context, err error, _ []byte) error {
 			logger.LogErrorf("Internal Server Error: %s \nrequestURI: %s\n %s", err.Error(), c.Request().RequestURI, string(debug.Stack()))
 			return err
 		},
@@ -103,7 +103,7 @@ func NewEcho(logger log.Logger, onHTTPError func(err error, c echo.Context), deb
 			LogStatus:       true,
 			LogError:        true,
 			LogResponseSize: true,
-			LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			LogValuesFunc: func(_ echo.Context, v middleware.RequestLoggerValues) error {
 				errString := ""
 				if v.Error != nil {
 					errString = fmt.Sprintf("error: \"%s\", ", v.Error.Error())
