@@ -87,7 +87,7 @@ func NewEcho(logger log.Logger, onHTTPError func(err error, c echo.Context), deb
 	}
 
 	e.Use(middleware.RecoverWithConfig(middleware.RecoverConfig{
-		LogErrorFunc: func(c echo.Context, err error, stack []byte) error {
+		LogErrorFunc: func(c echo.Context, err error, _ []byte) error {
 			logger.LogErrorf("Internal Server Error: %s \nrequestURI: %s\n %s", err.Error(), c.Request().RequestURI, string(debug.Stack()))
 			return err
 		},
@@ -103,7 +103,7 @@ func NewEcho(logger log.Logger, onHTTPError func(err error, c echo.Context), deb
 			LogStatus:       true,
 			LogError:        true,
 			LogResponseSize: true,
-			LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			LogValuesFunc: func(_ echo.Context, v middleware.RequestLoggerValues) error {
 				errString := ""
 				if v.Error != nil {
 					errString = fmt.Sprintf("error: \"%s\", ", v.Error.Error())
@@ -289,9 +289,33 @@ func ParseEpochQueryParam(c echo.Context, paramName string) (iotago.EpochIndex, 
 	return iotago.EpochIndex(value), nil
 }
 
-// ParseCursorQueryParam parses the cursor query parameter.
+// ParseEpochCursorQueryParam parses the cursor query parameter.
 // It returns an error if the query parameter is not set.
-func ParseCursorQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, uint32, error) {
+func ParseEpochCursorQueryParam(c echo.Context, paramName string) (iotago.EpochIndex, uint32, error) {
+	cursor := c.QueryParam(paramName)
+	if cursor == "" {
+		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
+	}
+	cursorParts := strings.Split(cursor, ",")
+
+	epochPart, err := strconv.ParseUint(cursorParts[0], 10, 32)
+	if err != nil {
+		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, in parsing query parameter: %s error: %w", cursorParts[0], paramName, err)
+	}
+	startedAtEpoch := iotago.EpochIndex(epochPart)
+
+	indexPart, err := strconv.ParseUint(cursorParts[1], 10, 32)
+	if err != nil {
+		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "invalid value: %s, in parsing query parameter: %s error: %w", cursorParts[1], paramName, err)
+	}
+	index := uint32(indexPart)
+
+	return startedAtEpoch, index, nil
+}
+
+// ParseSlotCursorQueryParam parses the cursor query parameter.
+// It returns an error if the query parameter is not set.
+func ParseSlotCursorQueryParam(c echo.Context, paramName string) (iotago.SlotIndex, uint32, error) {
 	cursor := c.QueryParam(paramName)
 	if cursor == "" {
 		return 0, 0, ierrors.Wrapf(ErrInvalidParameter, "parameter \"%s\" not specified", paramName)
