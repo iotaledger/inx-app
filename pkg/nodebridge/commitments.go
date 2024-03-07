@@ -33,7 +33,7 @@ func commitmentFromINXCommitment(inxCommitment *inx.Commitment, api iotago.API) 
 
 // ForceCommitUntil forces the node to commit until the given slot.
 func (n *nodeBridge) ForceCommitUntil(ctx context.Context, slot iotago.SlotIndex) error {
-	return lo.Return2(n.client.ForceCommitUntil(ctx, inx.WrapSlotIndex(slot)))
+	return lo.Return2(n.client.ForceCommitUntil(ctx, inx.WrapSlotRequest(slot)))
 }
 
 // Commitment returns the commitment for the given slot.

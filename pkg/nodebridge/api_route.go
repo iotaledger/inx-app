@@ -27,9 +27,6 @@ func (n *nodeBridge) RegisterAPIRoute(ctx context.Context, route string, bindAdd
 		Path:  path,
 	}
 
-	if err != nil {
-		return err
-	}
 	_, err = n.client.RegisterAPIRoute(ctx, apiReq)
 
 	return err
