@@ -270,7 +270,6 @@ func (n *nodeBridge) getPluginClient(ctx context.Context, clientInitHook func(ct
 	}
 
 	return notAvailableError
-
 }
 
 // Management returns the ManagementClient.

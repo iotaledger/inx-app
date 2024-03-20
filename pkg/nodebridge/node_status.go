@@ -60,7 +60,6 @@ func (n *nodeBridge) listenToNodeStatus(ctx context.Context) error {
 }
 
 func (n *nodeBridge) processNodeStatus(nodeStatus *inx.NodeStatus) error {
-
 	var latestCommitment *Commitment
 	var latestCommitmentChanged bool
 
