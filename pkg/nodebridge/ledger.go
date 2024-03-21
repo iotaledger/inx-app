@@ -1,4 +1,3 @@
-//nolint:nosnakecase // grpc uses underscores
 package nodebridge
 
 import (
@@ -52,10 +51,8 @@ func (n *nodeBridge) ListenToLedgerUpdates(ctx context.Context, startSlot, endSl
 	var latestCommitmentID iotago.CommitmentID
 	if err := ListenToStream(ctx, stream.Recv, func(payload *inx.LedgerUpdate) error {
 		switch op := payload.GetOp().(type) {
-
 		case *inx.LedgerUpdate_BatchMarker:
 			switch op.BatchMarker.GetMarkerType() {
-
 			case inx.LedgerUpdate_Marker_BEGIN:
 				commitmentID := op.BatchMarker.GetCommitmentId().Unwrap()
 				n.LogDebugf("BEGIN batch: commitmentID: %s, consumed: %d, created: %d", commitmentID, op.BatchMarker.GetConsumedCount(), op.BatchMarker.GetCreatedCount())
@@ -169,7 +166,7 @@ func (n *nodeBridge) ListenToAcceptedTransactions(ctx context.Context, consumer 
 		return consumer(&AcceptedTransaction{
 			API:           n.apiProvider.APIForSlot(slot),
 			Slot:          slot,
-			TransactionID: tx.TransactionId.Unwrap(),
+			TransactionID: tx.GetTransactionId().Unwrap(),
 			Consumed:      consumed,
 			Created:       created,
 		})
