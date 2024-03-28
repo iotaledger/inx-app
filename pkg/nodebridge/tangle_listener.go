@@ -1,155 +1,156 @@
 package nodebridge
 
-/*
-
 import (
 	"context"
-	"io"
 	"sync"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/iotaledger/hive.go/ierrors"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/hive.go/runtime/valuenotifier"
 	inx "github.com/iotaledger/inx/go"
 	iotago "github.com/iotaledger/iota.go/v4"
+	"github.com/iotaledger/iota.go/v4/api"
 )
 
-// ErrAlreadyRegistered is returned when a callback for the same block ID has already been registered.
-var ErrAlreadyRegistered = ierrors.New("callback for block ID is already registered")
+// ErrAlreadyRegistered is returned when a callback for the same ID has already been registered.
+var ErrAlreadyRegistered = ierrors.New("callback is already registered")
 
 type TangleListener struct {
-	nodeBridge                  *NodeBridge
-	blockSolidNotifier          *valuenotifier.Notifier[iotago.BlockID]
-	commitmentConfirmedNotifier *valuenotifier.Notifier[uint32]
+	log.Logger
 
-	blockSolidCallbacks     map[iotago.BlockID]BlockSolidCallback
-	blockSolidCallbacksLock sync.Mutex
+	nodeBridge                  NodeBridge
+	blockAcceptedNotifier       *valuenotifier.Notifier[iotago.BlockID]
+	commitmentConfirmedNotifier *valuenotifier.Notifier[iotago.SlotIndex]
+
+	blockAcceptedCallbacks     map[iotago.BlockID]BlockAcceptedCallback
+	blockAcceptedCallbacksLock sync.Mutex
 
 	Events *TangleListenerEvents
 }
 
 type TangleListenerEvents struct {
-	BlockSolid *event.Event1[*inx.BlockMetadata]
+	BlockAccepted *event.Event1[*api.BlockMetadataResponse]
 }
 
-type BlockSolidCallback = func(*inx.BlockMetadata)
+type BlockAcceptedCallback = func(*api.BlockMetadataResponse)
 
-func NewTangleListener(nodeBridge *NodeBridge) *TangleListener {
+func NewTangleListener(logger log.Logger, nodeBridge NodeBridge) *TangleListener {
 	return &TangleListener{
+		Logger:                      logger,
 		nodeBridge:                  nodeBridge,
-		blockSolidNotifier:          valuenotifier.New[iotago.BlockID](),
-		commitmentConfirmedNotifier: valuenotifier.New[uint32](),
-		blockSolidCallbacks:         map[iotago.BlockID]BlockSolidCallback{},
+		blockAcceptedNotifier:       valuenotifier.New[iotago.BlockID](),
+		commitmentConfirmedNotifier: valuenotifier.New[iotago.SlotIndex](),
+		blockAcceptedCallbacks:      map[iotago.BlockID]BlockAcceptedCallback{},
 		Events: &TangleListenerEvents{
-			BlockSolid: event.New1[*inx.BlockMetadata](),
+			BlockAccepted: event.New1[*api.BlockMetadataResponse](),
 		},
 	}
 }
 
-// RegisterBlockSolidCallback registers a callback for when a block with blockID becomes solid.
+// RegisterBlockAcceptedCallback registers a callback for when a block with blockID becomes accepted.
 // If another callback for the same ID has already been registered, an error is returned.
-func (t *TangleListener) RegisterBlockSolidCallback(ctx context.Context, blockID iotago.BlockID, f BlockSolidCallback) error {
-	if err := t.registerBlockSolidCallback(blockID, f); err != nil {
+func (t *TangleListener) RegisterBlockAcceptedCallback(ctx context.Context, blockID iotago.BlockID, f BlockAcceptedCallback) error {
+	if err := t.registerBlockAcceptedCallback(blockID, f); err != nil {
 		return err
 	}
 
 	metadata, err := t.nodeBridge.BlockMetadata(ctx, blockID)
 	if err != nil {
-		// if the block is not found, then it is also not yet solid
+		// if the block is not found, then it is also not yet accepted
 		if status.Code(err) == codes.NotFound {
 			return nil
 		}
 
 		return err
 	}
-	if metadata.Solid {
-		// trigger the callback, because the block is already solid
-		t.triggerBlockSolidCallback(metadata)
+
+	if metadata.BlockState == api.BlockStateAccepted ||
+		metadata.BlockState == api.BlockStateConfirmed ||
+		metadata.BlockState == api.BlockStateFinalized {
+		// trigger the callback, because the block is already accepted
+		t.triggerBlockAcceptedCallback(metadata)
 	}
 
 	return nil
 }
 
-func (t *TangleListener) registerBlockSolidCallback(blockID iotago.BlockID, f BlockSolidCallback) error {
-	t.blockSolidCallbacksLock.Lock()
-	defer t.blockSolidCallbacksLock.Unlock()
+func (t *TangleListener) registerBlockAcceptedCallback(blockID iotago.BlockID, f BlockAcceptedCallback) error {
+	t.blockAcceptedCallbacksLock.Lock()
+	defer t.blockAcceptedCallbacksLock.Unlock()
 
-	if _, ok := t.blockSolidCallbacks[blockID]; ok {
+	if _, ok := t.blockAcceptedCallbacks[blockID]; ok {
 		return ierrors.Wrapf(ErrAlreadyRegistered, "block %s", blockID)
 	}
-	t.blockSolidCallbacks[blockID] = f
+	t.blockAcceptedCallbacks[blockID] = f
 
 	return nil
 }
 
-// DeregisterBlockSolidCallback removes a previously registered callback for blockID.
-func (t *TangleListener) DeregisterBlockSolidCallback(blockID iotago.BlockID) {
-	t.blockSolidCallbacksLock.Lock()
-	defer t.blockSolidCallbacksLock.Unlock()
-	delete(t.blockSolidCallbacks, blockID)
+// DeregisterBlockAcceptedCallback removes a previously registered callback for blockID.
+func (t *TangleListener) DeregisterBlockAcceptedCallback(blockID iotago.BlockID) {
+	t.blockAcceptedCallbacksLock.Lock()
+	defer t.blockAcceptedCallbacksLock.Unlock()
+	delete(t.blockAcceptedCallbacks, blockID)
 }
 
-// ClearBlockSolidCallbacks removes all previously registered blockSolidCallbacks.
-func (t *TangleListener) ClearBlockSolidCallbacks() {
-	t.blockSolidCallbacksLock.Lock()
-	defer t.blockSolidCallbacksLock.Unlock()
-	t.blockSolidCallbacks = map[iotago.BlockID]BlockSolidCallback{}
+// ClearBlockAcceptedCallbacks removes all previously registered blockAcceptedCallbacks.
+func (t *TangleListener) ClearBlockAcceptedCallbacks() {
+	t.blockAcceptedCallbacksLock.Lock()
+	defer t.blockAcceptedCallbacksLock.Unlock()
+	t.blockAcceptedCallbacks = map[iotago.BlockID]BlockAcceptedCallback{}
 }
 
-func (t *TangleListener) triggerBlockSolidCallback(metadata *inx.BlockMetadata) {
-	id := metadata.GetBlockId().Unwrap()
-
-	t.blockSolidCallbacksLock.Lock()
-	defer t.blockSolidCallbacksLock.Unlock()
-	if f, ok := t.blockSolidCallbacks[id]; ok {
+func (t *TangleListener) triggerBlockAcceptedCallback(metadata *api.BlockMetadataResponse) {
+	t.blockAcceptedCallbacksLock.Lock()
+	defer t.blockAcceptedCallbacksLock.Unlock()
+	if f, ok := t.blockAcceptedCallbacks[metadata.BlockID]; ok {
 		go f(metadata)
-		delete(t.blockSolidCallbacks, id)
+		delete(t.blockAcceptedCallbacks, metadata.BlockID)
 	}
 }
 
-// RegisterBlockSolidEvent registers an event for when the block with blockID becomes solid.
-// If the block is already solid, the event is triggered imitatively.
-func (t *TangleListener) RegisterBlockSolidEvent(ctx context.Context, blockID iotago.BlockID) (*valuenotifier.Listener, error) {
-	blockSolidListener := t.blockSolidNotifier.Listener(blockID)
+// RegisterBlockAcceptedEvent registers an event for when the block with blockID becomes accepted.
+// If the block is already accepted, the event is triggered immediately.
+func (t *TangleListener) RegisterBlockAcceptedEvent(ctx context.Context, blockID iotago.BlockID) (*valuenotifier.Listener, error) {
+	blockAcceptedListener := t.blockAcceptedNotifier.Listener(blockID)
 
-	// check if the block is already solid
+	// check if the block is already accepted
 	metadata, err := t.nodeBridge.BlockMetadata(ctx, blockID)
 	if err != nil {
-		// if the block is not found, then it is also not yet solid
+		// if the block is not found, then it is also not yet accepted
 		if status.Code(err) == codes.NotFound {
-			return blockSolidListener, nil
+			return blockAcceptedListener, nil
 		}
 
 		// in case of another error, we need to deregister the listener
-		blockSolidListener.Deregister()
+		blockAcceptedListener.Deregister()
 
 		return nil, err
 	}
-	if metadata.Solid {
-		// trigger the sync event, because the block is already solid
-		t.blockSolidNotifier.Notify(metadata.UnwrapBlockID())
+
+	if metadata.BlockState == api.BlockStateAccepted ||
+		metadata.BlockState == api.BlockStateConfirmed ||
+		metadata.BlockState == api.BlockStateFinalized {
+		// trigger the sync event, because the block is already accepted
+		t.blockAcceptedNotifier.Notify(metadata.BlockID)
 	}
 
-	return blockSolidListener, nil
+	return blockAcceptedListener, nil
 }
 
 // RegisterSlotConfirmedEvent registers an event for when the slot with sIndex gets confirmed.
-// If the slot is already confirmed, the event is triggered imitatively.
-func (t *TangleListener) RegisterSlotConfirmedEvent(sIndex uint32) *valuenotifier.Listener {
-	slotConfirmedListener := t.commitmentConfirmedNotifier.Listener(sIndex)
+// If the slot is already confirmed, the event is triggered immediately.
+func (t *TangleListener) RegisterSlotConfirmedEvent(slot iotago.SlotIndex) *valuenotifier.Listener {
+	slotConfirmedListener := t.commitmentConfirmedNotifier.Listener(slot)
 
 	// check if the slot is already confirmed
-	comm, err := t.nodeBridge.ConfirmedCommitment()
-	if err != nil {
-		// this should never fail
-		panic(err)
-	}
-	if comm != nil && comm.Commitment.Slot >= iotago.Slot(sIndex) {
+	if latestConfirmedSlot := t.nodeBridge.NodeStatus().GetLastConfirmedBlockSlot(); iotago.SlotIndex(latestConfirmedSlot) >= slot {
 		// trigger the sync event, because the slot is already confirmed
-		t.commitmentConfirmedNotifier.Notify(sIndex)
+		t.commitmentConfirmedNotifier.Notify(slot)
 	}
 
 	return slotConfirmedListener
@@ -160,36 +161,41 @@ func (t *TangleListener) Run(ctx context.Context) {
 	defer cancel()
 
 	go func() {
-		if err := t.listenToSolidBlocks(c, cancel); err != nil {
-			t.nodeBridge.LogErrorf("Error listening to solid blocks: %s", err)
+		if err := t.listenToAcceptedBlocks(c, cancel); err != nil {
+			t.LogErrorf("Error listening to accepted blocks: %s", err.Error())
 		}
 	}()
 
-	hook := t.nodeBridge.Events.LatestFinalizedSlotChanged.Hook(func(c *Commitment) {
-		t.commitmentConfirmedNotifier.Notify(uint32(c.Commitment.Slot))
+	hook := t.nodeBridge.Events().LatestFinalizedCommitmentChanged.Hook(func(c *Commitment) {
+		t.commitmentConfirmedNotifier.Notify(c.Commitment.Slot)
 	})
 	defer hook.Unhook()
 	<-c.Done()
 }
 
-func (t *TangleListener) listenToSolidBlocks(ctx context.Context, cancel context.CancelFunc) error {
+func (t *TangleListener) listenToAcceptedBlocks(ctx context.Context, cancel context.CancelFunc) error {
 	defer cancel()
 
-	stream, err := t.nodeBridge.Client().ListenToSolidBlocks(ctx, &inx.NoParams{})
+	stream, err := t.nodeBridge.Client().ListenToAcceptedBlocks(ctx, &inx.NoParams{})
 	if err != nil {
 		return err
 	}
 
-	if err := ListenToStream(ctx, stream.Recv, func(metadata *inx.BlockMetadata) error {
-		t.triggerBlockSolidCallback(metadata)
-		t.blockSolidNotifier.Notify(metadata.GetBlockId().Unwrap())
-		t.Events.BlockSolid.Trigger(metadata)
+	if err := ListenToStream(ctx, stream.Recv, func(inxMetadata *inx.BlockMetadata) error {
+		metadata, err := inxMetadata.Unwrap()
+		if err != nil {
+			return ierrors.Wrap(err, "failed to unwrap metadata in listenToAcceptedBlocks")
+		}
+
+		t.triggerBlockAcceptedCallback(metadata)
+		t.blockAcceptedNotifier.Notify(metadata.BlockID)
+		t.Events.BlockAccepted.Trigger(metadata)
+
 		return nil
 	}); err != nil {
-		n.LogErrorf("listenToSolidBlocks failed: %s", err.Error())
+		t.LogErrorf("listenToAcceptedBlocks failed: %s", err.Error())
 		return err
 	}
 
 	return nil
 }
-*/
